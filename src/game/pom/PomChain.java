@@ -7,7 +7,7 @@ import java.util.*;
 
 public class PomChain {
 	private static final int MIN_CHAIN_LENGTH = 3;
-	private static final int NORMAL_POM_SCORE = 1;
+	private static final int NORMAL_POM_SCORE = 5;
 	private static final int SHINING_POM_SCORE = 100;
 
 	private Set<Point> chain; // coords of the poms in the chain

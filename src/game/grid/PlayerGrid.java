@@ -5,8 +5,6 @@ import java.awt.KeyEventDispatcher;
 import java.awt.KeyboardFocusManager;
 import java.awt.event.*;
 
-import javax.swing.JLabel;
-
 import game.ImageFactory;
 import game.pom.Dipom;
 import connection.Connection;
@@ -16,21 +14,13 @@ public class PlayerGrid extends GameGrid implements KeyEventDispatcher {
 	public PlayerGrid(Connection conn, GameGridObserver observer) {
 		super(conn, observer);
 		bgImage = ImageFactory.createImage("map/green_map.png");
+		x = 0;
+		y = 0;
 
         KeyboardFocusManager manager = KeyboardFocusManager.getCurrentKeyboardFocusManager();
         manager.addKeyEventDispatcher(this);
-	}
-
-	@Override
-	protected void spawnDipom() {
-		super.spawnDipom();
-		dipom = new Dipom(curX, curY);
-	}
-	
-	@Override
-	public void paintComponent(Graphics g) {
-		super.paintComponent(g);
-		dipom.paintIcon(this, g);
+        
+        spawnDipom();
 	}
 
 	@Override

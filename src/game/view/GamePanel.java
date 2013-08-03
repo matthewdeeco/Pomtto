@@ -3,32 +3,51 @@ package game.view;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-
 import game.grid.*;
-import game.utility.Dialog;
-
 import javax.swing.*;
+
 import connection.Connection;
 
 public class GamePanel extends JPanel implements GameGridObserver {
 	private Connection conn;
-	private GameGrid gameGrid;
+	private GameGrid playerGrid;
+	private GameGrid opponentGrid;
 	private Timer gameLoopTimer;
-	private JLabel cpLabel;
+	private JLabel playerCpLabel;
+	private JLabel opponentCpLabel;
 	
 	public GamePanel(Connection conn) {
 		this.conn = conn;
 		setBackground(Color.BLACK);
-		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+		setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+		
+		JPanel playerPanel = new JPanel();
+		playerPanel.setLayout(new BoxLayout(playerPanel, BoxLayout.Y_AXIS));
 		
 		JPanel cpPanel = new JPanel();
 		cpPanel.add(new JLabel("Current CP: "));
-		cpLabel = new JLabel();
-		cpPanel.add(cpLabel);
+		playerCpLabel = new JLabel();
+		cpPanel.add(playerCpLabel);
 		
-		gameGrid = new PlayerGrid(conn, this);
-		add(gameGrid);
-		add(cpPanel);
+		playerGrid = new PlayerGrid(conn, this);
+		playerPanel.add(playerGrid);
+		playerPanel.add(cpPanel);
+		
+		add(playerPanel);
+		
+		JPanel opponentPanel = new JPanel();
+		opponentPanel.setLayout(new BoxLayout(opponentPanel, BoxLayout.Y_AXIS));
+
+		cpPanel = new JPanel();
+		cpPanel.add(new JLabel("Current CP: "));
+		opponentCpLabel = new JLabel();
+		cpPanel.add(opponentCpLabel);
+		
+		opponentGrid = new OpponentGrid(conn, this);
+		opponentPanel.add(opponentGrid);
+		opponentPanel.add(cpPanel);
+		
+		add(opponentPanel);
 		gameLoopTimer = new Timer(70, new GameLoop()); 
 	}
 	
@@ -38,20 +57,21 @@ public class GamePanel extends JPanel implements GameGridObserver {
 
 	@Override
 	public void gameOver() {
-		gameGrid.setVisible(false);
 		gameLoopTimer.stop();
 	}
 
 	@Override
 	public void scoreChanged(Integer score) {
-		cpLabel.setText(score.toString());
+		playerCpLabel.setText(score.toString());
 	}
 	
 	private class GameLoop implements ActionListener {
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			gameGrid.update();
-			gameGrid.repaint();
+			playerGrid.update();
+			playerGrid.repaint();
+			opponentGrid.update();
+			opponentGrid.repaint();
 			gameLoopTimer.start();
 		}
 	}

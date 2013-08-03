@@ -17,8 +17,8 @@ public abstract class GameGrid extends JPanel {
 	protected final int cols = 15;
 	protected final int tileWidth = 24;
 	protected final int tileHeight = 22;
-	protected final int width = rows * tileWidth;
-	protected final int height = cols * tileHeight;
+	public final int width = rows * tileWidth;
+	public final int height = cols * tileHeight;
 
 	private static final int MAX_CP = 999;
 	
@@ -27,8 +27,9 @@ public abstract class GameGrid extends JPanel {
 	protected Pom[][] pomGrid;
 	protected boolean isFinishedFalling;
 	protected ImageIcon bgImage;
-	
-	protected int curX, curY;
+
+	protected int x, y;
+	protected int dipomX, dipomY;
 	private Integer currentCP;
 	private boolean[][] blocked;
 	private int burstScore;
@@ -38,27 +39,27 @@ public abstract class GameGrid extends JPanel {
 		this.conn = conn;
 		this.observer = observer;
 		this.setPreferredSize(new Dimension(width, height));
-		setDoubleBuffered(true);
 		initPomGrid();
 		initBlocked();
 		currentCP = 0;
-		spawnDipom();
 	}
 
-	protected void spawnDipom() {
-		curX = getX() + (rows / 2) * tileWidth;
-		curY = getY();
-		if (!isFree(row(curX), col(curY) + 1))
+	public void spawnDipom() {
+		dipomX = x + (rows / 2) * tileWidth;
+		dipomY = y;
+		dipom = new Dipom(dipomX, dipomY);
+		if (!isFree(row(dipomX), col(dipomY) + 1))
 			observer.gameOver();
 	}
 
 	@Override
 	public void paintComponent(Graphics g) {
 		super.paintComponent(g);
-		bgImage.paintIcon(this, g, getX(), getY());
+		bgImage.paintIcon(this, g, x, y);
 		for(int i = 0; i < rows; i++)
 			for (int j = 0; j < cols; j++)
 				pomGrid[i][j].paintIcon(this, g);
+		dipom.paintIcon(this, g);
 	}
 	
 	public void update() {
@@ -81,12 +82,12 @@ public abstract class GameGrid extends JPanel {
 	}
 	
 	protected boolean tryMove(int dx, int dy) {
-		int newX = row(curX + dx);
-		int newY = col(curY + dy);
+		int newX = row(dipomX + dx);
+		int newY = col(dipomY + dy);
 		if (isFree(newX, newY) && isFree(newX, newY + 1)) {
 			dipom.translate(dx, dy);
-			curX += dx;
-			curY += dy;
+			dipomX += dx;
+			dipomY += dy;
 			return true;
 		}
 		return false;
@@ -106,11 +107,11 @@ public abstract class GameGrid extends JPanel {
 	}
 	
 	private int row(int x) {
-		return (int) Math.ceil((x - this.getX()) / (float)tileWidth);
+		return (int) Math.ceil((x - this.x) / (float)tileWidth);
 	}
 	
 	private int col(int y) {
-		return (int) Math.ceil((y - this.getY()) / (float)tileHeight);
+		return (int) Math.ceil((y - this.y) / (float)tileHeight);
 	}
 	
 	private boolean isFree(int i, int j) {
@@ -123,8 +124,8 @@ public abstract class GameGrid extends JPanel {
 	private void dipomPlaced() {
 		Pom topPom = dipom.getTopPom();
 		Pom bottomPom = dipom.getBottomPom();
-		int row = row(curX);
-		int col = col(curY);
+		int row = row(dipomX);
+		int col = col(dipomY);
 		addToPomGrid(topPom, row, col);
 		addToPomGrid(bottomPom, row, col + 1);
 
@@ -138,8 +139,8 @@ public abstract class GameGrid extends JPanel {
 	}
 	
 	private void snapToPlace(Pom pom, int row, int col) {
-		pom.setX(getX() + row * tileWidth);
-		pom.setY(getY() + col * tileHeight);
+		pom.setX(x + row * tileWidth);
+		pom.setY(y + col * tileHeight);
 	}
 	
 	private void burstChains() {

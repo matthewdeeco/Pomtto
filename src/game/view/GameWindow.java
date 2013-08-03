@@ -1,7 +1,6 @@
 package game.view;
 
 import game.*;
-import game.utility.*;
 import game.utility.Dialog;
 
 import java.awt.*;
