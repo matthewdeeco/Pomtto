@@ -120,7 +120,11 @@ public class GameWindow {
 				s = ssocket.accept();
 				ssocket.close();
 			} else { // connect to the other player's server socket
-				ThreadSleep.sleep(500); // give opponent time to set up server socket
+				try {
+					Thread.sleep(500); // give opponent time to set up server socket
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
 				String targetHost = msg.split(" ")[1];
 				s = new Socket(targetHost, Client.PORT);
 			}

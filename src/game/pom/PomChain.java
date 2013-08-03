@@ -21,7 +21,7 @@ public class PomChain {
 	public PomChain(GameGrid grid, int row, int col) {
 		chain = new HashSet<Point>();
 		
-		Pom startingPom = grid.getPomAt(row, col);
+		Pom startingPom = grid.pomAt(row, col);
 		if (!startingPom.isShiningPom() && !startingPom.isNull()) {
 			score = 3; // at least 1 pom is in the chain
 			
@@ -41,7 +41,7 @@ public class PomChain {
 		while (!q.isEmpty()) {
 			Point p = q.remove();
 			visitedCoords.add(p);
-			Pom currentPom = grid.getPomAt(p.x, p.y);
+			Pom currentPom = grid.pomAt(p.x, p.y);
 			Pom adjacentPom;
 			for (int i = -1; i <= 1; i++)
 				for (int j = -1; j <= 1; j++)
@@ -53,10 +53,8 @@ public class PomChain {
 						Point adjPomCoords = new Point(row, col);
 						boolean notYetVisited = !visitedCoords.contains(adjPomCoords);
 						if (withinXBound && withinYBound && notYetVisited) {
-							adjacentPom = grid.getPomAt(row, col);
-							if (adjacentPom == null)
-								continue;
-							else if (currentPom.matchesColorOf(adjacentPom)) {
+							adjacentPom = grid.pomAt(row, col);
+							if (currentPom.matchesColorOf(adjacentPom)) {
 								chain.add(adjPomCoords);
 								q.add(adjPomCoords);
 								score += NORMAL_POM_SCORE; 
