@@ -8,4 +8,5 @@ public interface GridEventListener {
 	public void moveDipomRight();
 	public void moveDipomDown();
 	public void updatePomGrid(Pom[][] pomGrid);
+	public void swapDipom();
 }

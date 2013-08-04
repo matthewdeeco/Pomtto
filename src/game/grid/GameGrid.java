@@ -42,12 +42,14 @@ public abstract class GameGrid extends JPanel {
 		initPomGrid();
 		initBlocked();
 		currentCP = 0;
+		x = 0;
+		y = 0;
+		spawnDipom();
 	}
-
+	
 	public void spawnDipom() {
 		dipomX = x + (rows / 2) * tileWidth;
 		dipomY = y;
-		dipom = new Dipom(dipomX, dipomY);
 		if (!isFree(row(dipomX), col(dipomY) + 1))
 			observer.gameOver();
 	}
@@ -93,15 +95,15 @@ public abstract class GameGrid extends JPanel {
 		return false;
 	}
 	
-	protected void moveDipomLeft() {
+	public void moveDipomLeft() {
 		tryMove(-1 * Pom.WIDTH, 0);
 	}
 	
-	protected void moveDipomRight() {
+	public void moveDipomRight() {
 		tryMove(Pom.WIDTH, 0);
 	}
 	
-	protected void moveDipomDown() {
+	public void moveDipomDown() {
 		if (!tryMove(0, 5))
 			dipomPlaced();
 	}
@@ -223,6 +225,10 @@ public abstract class GameGrid extends JPanel {
 				}).start();
 			}
 		});
+	}
+	
+	public void swapDipom() {
+		dipom.swap();
 	}
 	
 	public Pom pomAt(int row, int col) {

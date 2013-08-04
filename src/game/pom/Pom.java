@@ -11,7 +11,6 @@ public class Pom implements Serializable {
 	public static final int HEIGHT = 22;
 	public static final Pom NULL_POM = new NullPom();
 	
-	private transient ImageIcon image;
 	private PomSprite sprite;
 	private float x, y;
 	private boolean isBursting;
@@ -20,7 +19,6 @@ public class Pom implements Serializable {
 	
 	public Pom(PomSprite sprite, float x, float y) {
 		this.sprite = sprite;
-		image = sprite.getNormalImage();
 		this.x = x;
 		this.y = y;
 	}
@@ -55,7 +53,6 @@ public class Pom implements Serializable {
 	}
 	
 	public void burst() {
-		image = sprite.getBurstImage();
 		isBursting = true;
 	}
 	
@@ -68,13 +65,13 @@ public class Pom implements Serializable {
 	}
 	
 	public void paintIcon(Component c, Graphics g) {
-		image.paintIcon(c, g, getX(), getY());
+		if (isBursting)
+			sprite.getBurstImage().paintIcon(c, g, getX(), getY());
+		else
+			sprite.getNormalImage().paintIcon(c, g, getX(), getY());
 	}
 	
 	public String toString() {
-		if (isNull())
-			return "NULL";
-		else
-			return sprite.toString();
+		return sprite.toString();
 	}
 }
