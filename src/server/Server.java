@@ -1,9 +1,10 @@
 package server;
 
+import game.Connection;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import connection.Connection;
 
 public class Server {
 	private static final int PORT = 8888;
@@ -34,10 +35,14 @@ public class Server {
 		public Matchup(Socket s1, Socket s2) throws IOException {
 			String inetAdd1 = s1.getInetAddress().getHostAddress();
 			
-			Connection conn1 = new Connection(s1);
-			conn1.writeObject("serve");
-			Connection conn2 = new Connection(s2);
-			conn2.writeObject("connect " + inetAdd1);
+			try {
+				Connection conn1 = new Connection(s1);
+				conn1.writeObject("serve");
+				Connection conn2 = new Connection(s2);
+				conn2.writeObject("connect " + inetAdd1);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
 		
 	}

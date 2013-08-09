@@ -1,13 +1,8 @@
 package game.pom;
 
-import game.ImageFactory;
+import game.utility.ImageFactory;
 
-import java.awt.Image;
-import java.io.IOException;
 import java.io.Serializable;
-import java.util.Arrays;
-import java.util.List;
-
 import javax.swing.ImageIcon;
 
 public enum PomSprite implements Serializable {

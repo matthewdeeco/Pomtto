@@ -1,7 +1,7 @@
-package game.view;
+package game;
 
-import game.*;
 import game.utility.Dialog;
+import game.utility.ImageFactory;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.net.*;
 import javax.swing.*;
 
-import connection.Connection;
 
 public class GameWindow {
 	private static final int WINDOW_WIDTH = 580;

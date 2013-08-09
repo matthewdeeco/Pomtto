@@ -13,5 +13,10 @@ public class UpdatePomGrid extends GridEvent {
 	public void invoke(GridEventListener listener) {
 		listener.updatePomGrid(pomGrid);
 	}
+	
+	@Override
+	public String toString() {
+		return "";
+	}
 
 }

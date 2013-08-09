@@ -23,6 +23,7 @@ public class NullDipom extends Dipom {
 		return Pom.NULL_POM;
 	}
 	
+	@Override
 	public void paintIcon(Component c, Graphics g) {
 	}
 	
@@ -30,5 +31,4 @@ public class NullDipom extends Dipom {
 	public String toString() {
 		return "NULL";
 	}
-	
 }

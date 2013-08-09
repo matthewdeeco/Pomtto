@@ -38,6 +38,18 @@ public class Dipom implements Serializable {
 		return poms[1];
 	}
 	
+	public int getX() {
+		return poms[0].getX();
+	}
+	
+	public int getY() {
+		return poms[0].getY();
+	}
+	
+	public String toString() {
+		return poms[0].toString() + "," + poms[1].toString();
+	}
+	
 	public void paintIcon(Component c, Graphics g) {
 		poms[0].paintIcon(c, g);
 		poms[1].paintIcon(c, g);

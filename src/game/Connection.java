@@ -1,4 +1,4 @@
-package connection;
+package game;
 import java.io.*;
 import java.net.*;
 
@@ -22,17 +22,12 @@ public class Connection {
 		try {
 			return in.readObject();
 		} catch (Exception e) {
-			e.printStackTrace();
 			return null;
 		}
 	}
 	
-	public void writeObject(Object obj) {
-		try {
-			out.writeObject(obj);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+	public void writeObject(Object obj) throws Exception {
+		out.writeObject(obj);
 	}
 	
 	public void close() {

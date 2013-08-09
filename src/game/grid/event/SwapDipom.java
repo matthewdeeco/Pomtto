@@ -6,5 +6,10 @@ public class SwapDipom extends GridEvent {
 	public void invoke(GridEventListener listener) {
 		listener.swapDipom();
 	}
+	
+	@Override
+	public String toString() {
+		return "Swap";
+	}
 
 }

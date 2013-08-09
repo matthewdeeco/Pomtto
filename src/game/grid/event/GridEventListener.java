@@ -3,10 +3,9 @@ package game.grid.event;
 import game.pom.*;
 
 public interface GridEventListener {
-	public void spawnDipom(Dipom dipom);
-	public void moveDipomLeft();
-	public void moveDipomRight();
-	public void moveDipomDown();
+	public void dipomCreated(Dipom dipom);
+	public void moveDipom(int dx, int dy);
 	public void updatePomGrid(Pom[][] pomGrid);
 	public void swapDipom();
+	public void burstChainedPoms();
 }

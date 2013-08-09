@@ -1,7 +1,6 @@
 package game;
 
 import game.utility.Dialog;
-import game.view.GameWindow;
 
 import javax.swing.*;
 
@@ -29,8 +28,8 @@ public class Client {
 	}
 
 	/**
-	 * Sets the look and feel to the system's look and feel. If that fails, then
-	 * sets the look and feel to Java's.
+	 * Sets the look and feel to the system's look and feel.
+	 * If that fails, then sets the look and feel to Java's.
 	 */
 	private void initializeLookAndFeel() throws Exception {
 		try {

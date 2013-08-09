@@ -4,8 +4,6 @@ import java.awt.Component;
 import java.awt.Graphics;
 import java.io.Serializable;
 
-import javax.swing.ImageIcon;
-
 public class Pom implements Serializable {
 	public static final int WIDTH = 24;
 	public static final int HEIGHT = 22;
@@ -57,7 +55,7 @@ public class Pom implements Serializable {
 	}
 	
 	public boolean isNull() {
-		return this instanceof NullPom;
+		return false;
 	}
 	
 	public boolean isBursting() {

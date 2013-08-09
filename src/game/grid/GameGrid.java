@@ -1,63 +1,62 @@
 package game.grid;
 
-import connection.Connection;
-import game.AudioHandler;
+import game.*;
+import game.grid.event.*;
 import game.pom.*;
+import game.utility.ImageFactory;
 
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.util.HashSet;
-import java.util.Set;
-
+import java.util.*;
 import javax.swing.*;
 
-public abstract class GameGrid extends JPanel {
+public abstract class GameGrid extends JPanel implements GridEventListener {
 	protected final int rows = 9;
 	protected final int cols = 15;
 	protected final int tileWidth = 24;
 	protected final int tileHeight = 22;
-	public final int width = rows * tileWidth;
-	public final int height = cols * tileHeight;
 
 	private static final int MAX_CP = 999;
+	
+	protected Queue<GridEvent> commands;
 	
 	protected Connection conn;
 	protected Dipom dipom;
 	protected Pom[][] pomGrid;
-	protected boolean isFinishedFalling;
 	protected ImageIcon bgImage;
+	protected ImageIcon avatarImage;
 
-	protected int x, y;
-	protected int dipomX, dipomY;
+	private boolean performingAction;
 	private Integer currentCP;
 	private boolean[][] blocked;
 	private int burstScore;
 	private GameGridObserver observer;
 	
-	public GameGrid(Connection conn, GameGridObserver observer) {
+	public GameGrid(Connection conn, int avatarIndex) {
 		this.conn = conn;
-		this.observer = observer;
+		int width = rows * tileWidth;
+		int height = cols * tileHeight;
 		this.setPreferredSize(new Dimension(width, height));
 		initPomGrid();
 		initBlocked();
+		commands = new LinkedList<GridEvent>();
 		currentCP = 0;
-		x = 0;
-		y = 0;
-		spawnDipom();
+		avatarImage = ImageFactory.createAvatarImage("map", avatarIndex);
+		dipom = new NullDipom();
 	}
 	
-	public void spawnDipom() {
-		dipomX = x + (rows / 2) * tileWidth;
-		dipomY = y;
-		if (!isFree(row(dipomX), col(dipomY) + 1))
+	public abstract void createDipom();
+	
+	public void dipomCreated(Dipom dipom) {
+		this.dipom = dipom;
+		if (!isFree(row(dipom.getX()), col(dipom.getY()) + 1))
 			observer.gameOver();
 	}
 
 	@Override
 	public void paintComponent(Graphics g) {
 		super.paintComponent(g);
-		bgImage.paintIcon(this, g, x, y);
+		bgImage.paintIcon(this, g, 0, 0);
+		avatarImage.paintIcon(this, g, tileWidth, 2 * tileHeight);
 		for(int i = 0; i < rows; i++)
 			for (int j = 0; j < cols; j++)
 				pomGrid[i][j].paintIcon(this, g);
@@ -65,55 +64,50 @@ public abstract class GameGrid extends JPanel {
 	}
 	
 	public void update() {
-		if (isFinishedFalling) {
-			isFinishedFalling = false;
-			spawnDipom();
-		}
-		else
+		if (commands.isEmpty()) // nothing to do
 			moveDipomDown();
+		else if (!performingAction) {
+			GridEvent event = commands.remove();
+			event.invoke(this);
+			System.out.println(event.toString());
+		}
 	}
 	
 	protected boolean tryMove(Pom pom, int dx, int dy) {
 		int newX = row(pom.getX() + dx);
 		int newY = col(pom.getY() + dy);
 		if (isFree(newX, newY)) {
-			dipom.translate(dx, dy);
+			pom.translate(dx, dy);
 			return true;
 		}
 		return false;
 	}
 	
 	protected boolean tryMove(int dx, int dy) {
-		int newX = row(dipomX + dx);
-		int newY = col(dipomY + dy);
+		int newX = row(dipom.getX() + dx);
+		int newY = col(dipom.getY() + dy);
 		if (isFree(newX, newY) && isFree(newX, newY + 1)) {
 			dipom.translate(dx, dy);
-			dipomX += dx;
-			dipomY += dy;
 			return true;
 		}
 		return false;
 	}
 	
-	public void moveDipomLeft() {
-		tryMove(-1 * Pom.WIDTH, 0);
+	public void moveDipom(int dx, int dy) {
+		tryMove(dx * Pom.WIDTH, dy * Pom.HEIGHT);
 	}
 	
-	public void moveDipomRight() {
-		tryMove(Pom.WIDTH, 0);
-	}
-	
-	public void moveDipomDown() {
-		if (!tryMove(0, 5))
+	private void moveDipomDown() {
+		if (!tryMove(0, 2))
 			dipomPlaced();
 	}
 	
 	private int row(int x) {
-		return (int) Math.ceil((x - this.x) / (float)tileWidth);
+		return (int) Math.ceil(x / (float)tileWidth);
 	}
 	
 	private int col(int y) {
-		return (int) Math.ceil((y - this.y) / (float)tileHeight);
+		return (int) Math.ceil(y / (float)tileHeight);
 	}
 	
 	private boolean isFree(int i, int j) {
@@ -126,13 +120,13 @@ public abstract class GameGrid extends JPanel {
 	private void dipomPlaced() {
 		Pom topPom = dipom.getTopPom();
 		Pom bottomPom = dipom.getBottomPom();
-		int row = row(dipomX);
-		int col = col(dipomY);
+		int row = row(dipom.getX());
+		int col = col(dipom.getY());
 		addToPomGrid(topPom, row, col);
 		addToPomGrid(bottomPom, row, col + 1);
-
-		burstChains();
-		isFinishedFalling = true;
+		
+		burstChainedPoms();
+		//commands.add(new BurstChainedPoms());
 	}
 	
 	private void addToPomGrid(Pom pom, int row, int col) {
@@ -141,11 +135,37 @@ public abstract class GameGrid extends JPanel {
 	}
 	
 	private void snapToPlace(Pom pom, int row, int col) {
-		pom.setX(x + row * tileWidth);
-		pom.setY(y + col * tileHeight);
+		pom.setX(row * tileWidth);
+		pom.setY(col * tileHeight);
+	}
+
+	public void burstChainedPoms() {
+		chainPoms();
+		boolean hasPomToBurst = false;
+		for (int i = 0; i < rows; i++)
+			for (int j = 0; j < cols; j++)
+				if (pomGrid[i][j].isBursting()) {
+					pomGrid[i][j] = Pom.NULL_POM;
+					hasPomToBurst = true;
+				}
+		if (hasPomToBurst) {
+			performingAction = true;
+			AudioHandler.playBurstEffect();
+			currentCP += burstScore;
+			if (currentCP > MAX_CP)
+				currentCP = MAX_CP;
+			observer.scoreChanged();
+			burstScore = 0;
+			dropDownAllPoms();
+			performingAction = false;
+			commands.add(new BurstChainedPoms()); // there may be new chains
+		} else { // no more chains
+			performingAction = false;
+			createDipom();
+		}
 	}
 	
-	private void burstChains() {
+	private void chainPoms() {
 		Set<PomChain> chains = new HashSet<PomChain>();
 		chains.clear();
 		for (int i = 1; i < rows - 1; i++)
@@ -157,42 +177,16 @@ public abstract class GameGrid extends JPanel {
 		if (!chains.isEmpty()) {
 			for (PomChain chain: chains) {
 				for (Point p: chain.getChainedCoords()) {
-					System.out.println(p.x + "," + p.y + "=" + pomGrid[p.x][p.y].toString());
+					//System.out.println(p.x + "," + p.y + "=" + pomGrid[p.x][p.y].toString());
 					pomGrid[p.x][p.y].burst();
 				}
 				burstScore += chain.getScore();
-				SwingUtilities.invokeLater(new Runnable() {
-					@Override
-					public void run() {
-						new Timer(800, new ActionListener() {
-							@Override
-							public void actionPerformed(ActionEvent arg0) {
-								burstChainedPoms();
-							}
-						}).start();
-					}
-				});
 			}
 		}
 	}
 
-	protected void burstChainedPoms() {
-		boolean hasPomToBurst = false;
-		for (int i = 0; i < rows; i++)
-			for (int j = 0; j < cols; j++)
-				if (pomGrid[i][j].isBursting()) {
-					pomGrid[i][j] = Pom.NULL_POM;
-					hasPomToBurst = true;
-				}
-		if (hasPomToBurst) {
-			AudioHandler.playBurstEffect();
-			currentCP += burstScore;
-			if (currentCP > MAX_CP)
-				currentCP = MAX_CP;
-			observer.scoreChanged(currentCP);
-			burstScore = 0;
-			dropDownAllPoms();
-		}
+	public Integer getScore() {
+		return currentCP;
 	}
 	
 	private void dropDownAllPoms() {
@@ -214,17 +208,6 @@ public abstract class GameGrid extends JPanel {
 				colPomCount--;
 			}
 		}
-		SwingUtilities.invokeLater(new Runnable() {
-			@Override
-			public void run() {
-				new Timer(800, new ActionListener() {
-					@Override
-					public void actionPerformed(ActionEvent arg0) {
-						burstChains();
-					}
-				}).start();
-			}
-		});
 	}
 	
 	public void swapDipom() {
@@ -233,6 +216,10 @@ public abstract class GameGrid extends JPanel {
 	
 	public Pom pomAt(int row, int col) {
 		return pomGrid[row][col];
+	}
+	
+	public void setGameGridObserver(GameGridObserver observer) {
+		this.observer = observer;
 	}
 	
 	private void initBlocked() {
@@ -287,5 +274,19 @@ public abstract class GameGrid extends JPanel {
 		for (int i = 0; i < rows; i++)
 			for (int j = 0; j < cols; j++)
 				pomGrid[i][j] = Pom.NULL_POM;
+	}
+	
+	protected void printPoms() {
+		for (int j = 0; j < cols; j++) {
+			for (int i = 0; i < rows; i++) {
+				if (blocked[i][j])
+					System.out.print("BLKD");
+				else
+					System.out.print(pomGrid[i][j].toString());
+				System.out.print("\t");
+			}
+			System.out.println();
+		}
+		System.out.println();
 	}
 }
