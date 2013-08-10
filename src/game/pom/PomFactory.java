@@ -1,8 +1,6 @@
 package game.pom;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 public class PomFactory {
 	private static final List<PomSprite> SPRITES = Arrays.asList(PomSprite.values());
@@ -10,8 +8,15 @@ public class PomFactory {
 	private static final Random RANDOM = new Random();
 	private static final int SHINING_POM_CHANCE = 2; // percentage
 	
-	public static Pom createPom(float x, float y) {
+	public static Pom createRandomPom(float x, float y) {
 		return new Pom(randomColor(), x, y);
+	}
+	
+	public static Pom createPom(String color, float x, float y) {
+		if (color.equals("NULL"))
+			return Pom.NULL_POM;
+		else
+			return new Pom(PomSprite.valueOf(color), x, y);
 	}
 	
 	private static PomSprite randomColor() {

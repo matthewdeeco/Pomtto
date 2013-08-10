@@ -69,7 +69,12 @@ public class Pom implements Serializable {
 			sprite.getNormalImage().paintIcon(c, g, getX(), getY());
 	}
 	
-	public String toString() {
+	public String getColor() {
 		return sprite.toString();
+	}
+	
+	@Override
+	public String toString() {
+		return getColor();
 	}
 }

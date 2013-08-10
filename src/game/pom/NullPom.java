@@ -26,7 +26,7 @@ class NullPom extends Pom {
 	}
 	
 	@Override
-	public String toString() {
+	public String getColor() {
 		return "NULL";
 	}
 	

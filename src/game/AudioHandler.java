@@ -26,7 +26,7 @@ public class AudioHandler {
 	
 	public static void playMainGameTrack() {
 		if (!playTrack.playing()) {
-			playTrack.loop();
+			// playTrack.loop();
 			menuTrack.stop();			
 		}
 	}

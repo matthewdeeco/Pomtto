@@ -11,8 +11,8 @@ public class Dipom implements Serializable {
 	public Dipom(int x, int y) {
 		poms = new Pom[2];
 		
-		poms[0] = PomFactory.createPom(x, y);
-		poms[1] = PomFactory.createPom(x, y + Pom.HEIGHT);
+		poms[0] = PomFactory.createRandomPom(x, y);
+		poms[1] = PomFactory.createRandomPom(x, y + Pom.HEIGHT);
 	}
 	
 	/** Swaps the place of the two poms. */

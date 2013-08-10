@@ -12,14 +12,6 @@ public class OpponentGrid extends GameGrid {
 		bgImage = ImageFactory.createImage("map/blue_map.png");
 		new Thread(new GridEventReceiver()).start();
 	}
-
-	@Override
-	public void updatePomGrid(Pom[][] pomGrid) {
-		// this.pomGrid = pomGrid;
-		// repaint();
-		// System.out.println("Received poms:");
-		// printPoms();
-	}
 	
 	private class GridEventReceiver implements Runnable {
 		@Override

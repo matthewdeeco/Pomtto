@@ -11,16 +11,21 @@ import game.pom.*;
 import game.utility.Dialog;
 import game.utility.ImageFactory;
 
-public class PlayerGrid extends GameGrid implements KeyEventDispatcher, ActionListener {
-	private Timer timer = new Timer(5000, this);
+public class PlayerGrid extends GameGrid implements KeyEventDispatcher {
+	private Timer updatePomGridTimer = new Timer(2000, new UpdatePomGridListener());
+	private Timer acceptPressesTimer = new Timer(400, new AcceptPressesListener());
+	private boolean acceptPresses = true;
 			
 	public PlayerGrid(Connection conn, int avatarIndex) {
 		super(conn, avatarIndex);
+		for (int i = 1; i < rows - 1; i++)
+			for (int j = 10; j < cols - 1; j++)
+				setPomAt(i, j, PomFactory.createRandomPom(0, 0));
 		bgImage = ImageFactory.createImage("map/green_map.png");
 		
         KeyboardFocusManager manager = KeyboardFocusManager.getCurrentKeyboardFocusManager();
         manager.addKeyEventDispatcher(this);
-        timer.start();
+        updatePomGridTimer.start();
         createDipom();
 	}
 
@@ -36,6 +41,7 @@ public class PlayerGrid extends GameGrid implements KeyEventDispatcher, ActionLi
 		try {
 			conn.writeObject(event);
 		} catch (Exception e) {
+			e.printStackTrace();
 			Dialog.errorMessage("Opponent disconnected!");
 			System.exit(0);
 		}
@@ -43,43 +49,51 @@ public class PlayerGrid extends GameGrid implements KeyEventDispatcher, ActionLi
 
 	@Override
 	public boolean dispatchKeyEvent(KeyEvent e) {
-		GridEvent event = null;
-		if (e.getID() == KeyEvent.KEY_PRESSED) {
-			if (e.getKeyCode() == KeyEvent.VK_DOWN)
-				event = new MoveDipom(0, 1);
-		}
-		else if (e.getID() == KeyEvent.KEY_RELEASED) {
-			if (e.getKeyCode() == KeyEvent.VK_LEFT)
-				event = new MoveDipom(-1, 0);
-			else if (e.getKeyCode() == KeyEvent.VK_RIGHT)
-				event = new MoveDipom(1, 0);
-			else if (e.getKeyCode() == KeyEvent.VK_UP)
-				event = new SwapDipom();
-		}
-		if (event != null) {
-			sendEvent(event);
-			commands.add(event);
+		if (acceptPresses) {
+			GridEvent event = null;
+			if (e.getID() == KeyEvent.KEY_RELEASED) {
+				if (e.getKeyCode() == KeyEvent.VK_DOWN)
+					event = new MoveDipom(0, 1);
+				else if (e.getKeyCode() == KeyEvent.VK_LEFT)
+					event = new MoveDipom(-1, 0);
+				else if (e.getKeyCode() == KeyEvent.VK_RIGHT)
+					event = new MoveDipom(1, 0);
+				else if (e.getKeyCode() == KeyEvent.VK_UP)
+					event = new SwapDipom();
+			}
+			if (event != null) {
+				acceptPresses = false;
+				acceptPressesTimer.start();
+				sendEvent(event);
+				commands.add(event);
+			}
 		}
 		return false;
 	}
-
-	@Override
-	public void actionPerformed(ActionEvent arg0) {
-		// System.out.println("Sent poms:");
-		// printPoms();
-		final GridEvent updateEvent = new UpdatePomGrid(pomGrid);
-		new Timer(2000, new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				sendEvent(updateEvent);
-			}
-		}).start();
-		
-		timer.start();
+	
+	class UpdatePomGridListener implements ActionListener {
+		@Override
+		public void actionPerformed(ActionEvent arg0) {
+			// System.out.println("Sent poms:");
+			// printPoms(pomGrid);
+			final GridEvent updateEvent = new UpdatePomGrid(pomGrid);
+			new Timer(2000, new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					sendEvent(updateEvent);
+				}
+			}).start();
+			
+			updatePomGridTimer.start();
+		}
 	}
+	
+	class AcceptPressesListener implements ActionListener {
 
-	@Override
-	public void updatePomGrid(Pom[][] pomGrid) {
+		@Override
+		public void actionPerformed(ActionEvent arg0) {
+			acceptPresses = true; 
+		}
 	}
 
 }

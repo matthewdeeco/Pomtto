@@ -43,7 +43,7 @@ public class GamePanel extends JPanel implements GameGridObserver {
 	public void gameOver() {
 		gameLoopTimer.stop();
 		Dialog.infoMessage("Game over!");
-		System.exit(0);
+		// System.exit(0);
 	}
 	
 	private class GameLoop implements ActionListener {

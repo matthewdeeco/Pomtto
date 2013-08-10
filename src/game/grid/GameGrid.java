@@ -21,14 +21,14 @@ public abstract class GameGrid extends JPanel implements GridEventListener {
 	
 	protected Connection conn;
 	protected Dipom dipom;
-	protected Pom[][] pomGrid;
+	protected volatile Pom[][] pomGrid;
 	protected ImageIcon bgImage;
 	protected ImageIcon avatarImage;
 
 	private boolean performingAction;
 	private Integer currentCP;
-	private boolean[][] blocked;
 	private int burstScore;
+	private boolean[][] blocked;
 	private GameGridObserver observer;
 	
 	public GameGrid(Connection conn, int avatarIndex) {
@@ -43,6 +43,29 @@ public abstract class GameGrid extends JPanel implements GridEventListener {
 		avatarImage = ImageFactory.createAvatarImage("map", avatarIndex);
 		dipom = new NullDipom();
 	}
+
+	@Override
+	public void paintComponent(Graphics g) {
+		super.paintComponent(g);
+		bgImage.paintIcon(this, g, 0, 0);
+		avatarImage.paintIcon(this, g, tileWidth, 2 * tileHeight);
+		for (int i = 0; i < rows; i++)
+			for (int j = 0; j < cols; j++)
+				getPomAt(i, j).paintIcon(this, g);
+		dipom.paintIcon(this, g);
+	}
+	
+	public void update() {
+		if (!performingAction) {
+			moveDipomDown();
+			if (!commands.isEmpty()) {
+				GridEvent event = commands.remove();
+				event.invoke(this);
+				if (event instanceof UpdatePomGrid == false)
+					System.out.println(event.toString());	
+			}
+		}
+	}
 	
 	public abstract void createDipom();
 	
@@ -51,26 +74,14 @@ public abstract class GameGrid extends JPanel implements GridEventListener {
 		if (!isFree(row(dipom.getX()), col(dipom.getY()) + 1))
 			observer.gameOver();
 	}
-
-	@Override
-	public void paintComponent(Graphics g) {
-		super.paintComponent(g);
-		bgImage.paintIcon(this, g, 0, 0);
-		avatarImage.paintIcon(this, g, tileWidth, 2 * tileHeight);
-		for(int i = 0; i < rows; i++)
-			for (int j = 0; j < cols; j++)
-				pomGrid[i][j].paintIcon(this, g);
-		dipom.paintIcon(this, g);
+	
+	public void moveDipom(int dx, int dy) {
+		tryMove(dx * Pom.WIDTH, dy * Pom.HEIGHT);
 	}
 	
-	public void update() {
-		if (commands.isEmpty()) // nothing to do
-			moveDipomDown();
-		else if (!performingAction) {
-			GridEvent event = commands.remove();
-			event.invoke(this);
-			System.out.println(event.toString());
-		}
+	private void moveDipomDown() {
+		if (!tryMove(0, 2))
+			dipomPlaced();
 	}
 	
 	protected boolean tryMove(Pom pom, int dx, int dy) {
@@ -93,15 +104,6 @@ public abstract class GameGrid extends JPanel implements GridEventListener {
 		return false;
 	}
 	
-	public void moveDipom(int dx, int dy) {
-		tryMove(dx * Pom.WIDTH, dy * Pom.HEIGHT);
-	}
-	
-	private void moveDipomDown() {
-		if (!tryMove(0, 2))
-			dipomPlaced();
-	}
-	
 	private int row(int x) {
 		return (int) Math.ceil(x / (float)tileWidth);
 	}
@@ -114,7 +116,7 @@ public abstract class GameGrid extends JPanel implements GridEventListener {
 		if (i < 0 || i >= rows || j < 0 || j >= cols)
 			return false;
 		else
-			return (!blocked[i][j]) && (pomGrid[i][j].isNull());
+			return (!blocked[i][j]) && (getPomAt(i, j).isNull());
 	}
 	
 	private void dipomPlaced() {
@@ -122,21 +124,11 @@ public abstract class GameGrid extends JPanel implements GridEventListener {
 		Pom bottomPom = dipom.getBottomPom();
 		int row = row(dipom.getX());
 		int col = col(dipom.getY());
-		addToPomGrid(topPom, row, col);
-		addToPomGrid(bottomPom, row, col + 1);
+		setPomAt(row, col, topPom);
+		setPomAt(row, col + 1, bottomPom);
 		
 		burstChainedPoms();
 		//commands.add(new BurstChainedPoms());
-	}
-	
-	private void addToPomGrid(Pom pom, int row, int col) {
-		pomGrid[row][col] = pom;
-		snapToPlace(pom, row, col);
-	}
-	
-	private void snapToPlace(Pom pom, int row, int col) {
-		pom.setX(row * tileWidth);
-		pom.setY(col * tileHeight);
 	}
 
 	public void burstChainedPoms() {
@@ -144,8 +136,8 @@ public abstract class GameGrid extends JPanel implements GridEventListener {
 		boolean hasPomToBurst = false;
 		for (int i = 0; i < rows; i++)
 			for (int j = 0; j < cols; j++)
-				if (pomGrid[i][j].isBursting()) {
-					pomGrid[i][j] = Pom.NULL_POM;
+				if (getPomAt(i, j).isBursting()) {
+					setPomAt(i, j, Pom.NULL_POM);
 					hasPomToBurst = true;
 				}
 		if (hasPomToBurst) {
@@ -178,31 +170,26 @@ public abstract class GameGrid extends JPanel implements GridEventListener {
 			for (PomChain chain: chains) {
 				for (Point p: chain.getChainedCoords()) {
 					//System.out.println(p.x + "," + p.y + "=" + pomGrid[p.x][p.y].toString());
-					pomGrid[p.x][p.y].burst();
+					getPomAt(p.x, p.y).burst();
 				}
 				burstScore += chain.getScore();
 			}
 		}
-	}
-
-	public Integer getScore() {
-		return currentCP;
 	}
 	
 	private void dropDownAllPoms() {
 		for (int i = rows - 2; i > 0 ; i--) {
 			int colPomCount = 0; 
 			for (int j = cols - 2; j > 1; j--)
-				if (!pomGrid[i][j].isNull())
+				if (!getPomAt(i, j).isNull())
 					colPomCount++;
 			
 			for (int j = cols - 2; j > 1; j--) {
 				if (colPomCount == 0)
 					break;
-				while (pomGrid[i][j].isNull()) {
+				while (getPomAt(i, j).isNull()) {
 					for (int k = j; k > 1; k--) {
-						pomGrid[i][k] = pomGrid[i][k-1];
-						snapToPlace(pomGrid[i][k], i, k);
+						setPomAt(i, k, getPomAt(i, k - 1));
 					}
 				}
 				colPomCount--;
@@ -213,9 +200,20 @@ public abstract class GameGrid extends JPanel implements GridEventListener {
 	public void swapDipom() {
 		dipom.swap();
 	}
+
+	public Integer getScore() {
+		return currentCP;
+	}
 	
-	public Pom pomAt(int row, int col) {
+	public Pom getPomAt(int row, int col) {
 		return pomGrid[row][col];
+	}
+
+	public void setPomAt(int row, int col, Pom pom) {
+		pomGrid[row][col] = pom;
+		pom.setX(row * tileWidth);
+		pom.setY(col * tileHeight);
+		repaint();
 	}
 	
 	public void setGameGridObserver(GameGridObserver observer) {
@@ -276,7 +274,7 @@ public abstract class GameGrid extends JPanel implements GridEventListener {
 				pomGrid[i][j] = Pom.NULL_POM;
 	}
 	
-	protected void printPoms() {
+	protected void printPoms(Pom[][] pomGrid) {
 		for (int j = 0; j < cols; j++) {
 			for (int i = 0; i < rows; i++) {
 				if (blocked[i][j])
@@ -288,5 +286,13 @@ public abstract class GameGrid extends JPanel implements GridEventListener {
 			System.out.println();
 		}
 		System.out.println();
+	}
+	
+	public int getNumRows() {
+		return rows;
+	}
+	
+	public int getNumCols() {
+		return cols;
 	}
 }
