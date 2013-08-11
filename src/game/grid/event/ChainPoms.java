@@ -1,10 +1,10 @@
 package game.grid.event;
 
-public class BurstChainedPoms extends GridEvent {
+public class ChainPoms extends GridEvent {
 
 	@Override
 	public void invoke(GridEventListener listener) {
-		listener.burstChainedPoms();
+		listener.chainPoms();
 	}
 	
 	@Override

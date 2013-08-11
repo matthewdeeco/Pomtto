@@ -5,13 +5,15 @@ import java.io.*;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 
+import darrylbu.icon.AlphaImageIcon;
+
 public class ImageFactory {
 	private ImageFactory() {}
 	
 	public static ImageIcon createImage(String filepath) {
 		try {
 			Image image = ImageIO.read(new File("res/" + filepath));
-			return new ImageIcon(image);
+			return new AlphaImageIcon(new ImageIcon(image));
 		} catch (IOException e) {
 			e.printStackTrace();
 			return null;

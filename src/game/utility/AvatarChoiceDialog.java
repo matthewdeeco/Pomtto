@@ -1,5 +1,7 @@
 package game.utility;
 
+import game.AudioHandler;
+
 import java.util.ArrayList;
 import java.awt.*;
 import java.awt.event.*;
@@ -61,6 +63,7 @@ public class AvatarChoiceDialog extends JDialog implements ActionListener
    public void actionPerformed(ActionEvent e) {
       JButton avatarButtonPressed = (JButton) e.getSource();
       selectedAvatar = avatarButtons.indexOf(avatarButtonPressed) + 1;
+      AudioHandler.playClickEffect();
       dispose();
    }
 }

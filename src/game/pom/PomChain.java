@@ -7,7 +7,7 @@ import java.util.*;
 
 public class PomChain {
 	private static final int MIN_CHAIN_LENGTH = 3;
-	private static final int NORMAL_POM_SCORE = 5;
+	private static final int NORMAL_POM_SCORE = 3;
 	private static final int SHINING_POM_SCORE = 100;
 
 	private Set<Point> chain; // coords of the poms in the chain
@@ -16,7 +16,6 @@ public class PomChain {
 	private List<Point> visitedCoords; // coords visited
 	private Queue<Point> q;
 	private GameGrid grid;
-	private int shiningPomCount;
 	
 	public PomChain(GameGrid grid, int row, int col) {
 		chain = new HashSet<Point>();
@@ -28,7 +27,6 @@ public class PomChain {
 			visitedCoords = new ArrayList<Point>();
 			q = new LinkedList<Point>();
 			this.grid = grid;
-			shiningPomCount = 0;
 			
 			Point startingCoord = new Point(row, col);
 			q.add(startingCoord);
@@ -38,6 +36,7 @@ public class PomChain {
 	}
 	
 	private void createChain() {
+		int shiningPomCount = 0;
 		while (!q.isEmpty()) {
 			Point p = q.remove();
 			visitedCoords.add(p);
@@ -48,20 +47,19 @@ public class PomChain {
 					if (Math.abs(i + j) == 1) { // only 1 step away from the middle
 						int row = p.x + i;
 						int col = p.y + j;
-						boolean withinXBound = (row >= 0) && (row < grid.getNumRows());
-						boolean withinYBound = (col >= 0) && (col < grid.getNumCols());
+						boolean withinXBound = (row > 0) && (row < grid.getNumRows());
+						boolean withinYBound = (col >= 0) && (col < grid.getNumCols() - 1);
 						Point adjPomCoords = new Point(row, col);
 						boolean notYetVisited = !visitedCoords.contains(adjPomCoords);
 						if (withinXBound && withinYBound && notYetVisited) {
 							adjacentPom = grid.getPomAt(row, col);
 							if (currentPom.matchesColorOf(adjacentPom)) {
 								chain.add(adjPomCoords);
-								q.add(adjPomCoords);
-								score += NORMAL_POM_SCORE; 
+								q.add(adjPomCoords); 
 							}
 							else if (adjacentPom.isShiningPom()) {
 								chain.add(adjPomCoords);
-								score += SHINING_POM_SCORE;
+								q.add(adjPomCoords);
 								shiningPomCount++;
 							}
 						}
@@ -70,7 +68,10 @@ public class PomChain {
 		if (chain.size() - shiningPomCount < MIN_CHAIN_LENGTH) { // did not meet min to make a chain
 			chain.clear();
 			score = 0;
-		}
+		} else if (shiningPomCount > 0)
+			score = (chain.size() - shiningPomCount) * SHINING_POM_SCORE;
+		else
+			score = chain.size() * NORMAL_POM_SCORE;
 	}
 	
 	public boolean isEmpty() {

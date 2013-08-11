@@ -7,9 +7,13 @@ import game.utility.ImageFactory;
 
 import java.awt.*;
 import java.util.*;
+import java.util.List;
+
 import javax.swing.*;
 
-public abstract class GameGrid extends JPanel implements GridEventListener {
+public abstract class GameGrid extends JPanel {
+	private enum State {DIPOM_FALLING, BURSTING_POMS, DROPPING_POMS};
+	
 	protected final int rows = 9;
 	protected final int cols = 15;
 	protected final int tileWidth = 24;
@@ -21,27 +25,29 @@ public abstract class GameGrid extends JPanel implements GridEventListener {
 	
 	protected Connection conn;
 	protected Dipom dipom;
-	protected volatile Pom[][] pomGrid;
-	protected ImageIcon bgImage;
-	protected ImageIcon avatarImage;
-
-	private boolean performingAction;
+	protected Pom[][] pomGrid;
+	protected ImageIcon bgImage, avatarImage;
+	
+	protected boolean debugMode;
+	
+	private State state;
 	private Integer currentCP;
-	private int burstScore;
 	private boolean[][] blocked;
-	private GameGridObserver observer;
+	private List<GridObserver> observers;
 	
 	public GameGrid(Connection conn, int avatarIndex) {
 		this.conn = conn;
 		int width = rows * tileWidth;
 		int height = cols * tileHeight;
-		this.setPreferredSize(new Dimension(width, height));
+		setPreferredSize(new Dimension(width, height));
 		initPomGrid();
 		initBlocked();
 		commands = new LinkedList<GridEvent>();
 		currentCP = 0;
 		avatarImage = ImageFactory.createAvatarImage("map", avatarIndex);
 		dipom = new NullDipom();
+		state = State.DIPOM_FALLING;
+		observers = new ArrayList<GridObserver>();
 	}
 
 	@Override
@@ -56,45 +62,27 @@ public abstract class GameGrid extends JPanel implements GridEventListener {
 	}
 	
 	public void update() {
-		if (!performingAction) {
+		if (state == State.DIPOM_FALLING) {
 			moveDipomDown();
-			if (!commands.isEmpty()) {
-				GridEvent event = commands.remove();
-				event.invoke(this);
-				if (event instanceof UpdatePomGrid == false)
-					System.out.println(event.toString());	
-			}
+		} else if (state == State.DROPPING_POMS) {
+			dropDownAllPoms();	
+		} else if (state == State.BURSTING_POMS) {
+			fadeChainedPoms();
 		}
 	}
 	
 	public abstract void createDipom();
 	
-	public void dipomCreated(Dipom dipom) {
-		this.dipom = dipom;
-		if (!isFree(row(dipom.getX()), col(dipom.getY()) + 1))
-			observer.gameOver();
-	}
-	
 	public void moveDipom(int dx, int dy) {
-		tryMove(dx * Pom.WIDTH, dy * Pom.HEIGHT);
+		tryMove(dx * Pom.WIDTH, dy);
 	}
 	
 	private void moveDipomDown() {
-		if (!tryMove(0, 2))
+		if (!tryMove(0, 3))
 			dipomPlaced();
 	}
 	
-	protected boolean tryMove(Pom pom, int dx, int dy) {
-		int newX = row(pom.getX() + dx);
-		int newY = col(pom.getY() + dy);
-		if (isFree(newX, newY)) {
-			pom.translate(dx, dy);
-			return true;
-		}
-		return false;
-	}
-	
-	protected boolean tryMove(int dx, int dy) {
+	private boolean tryMove(int dx, int dy) {
 		int newX = row(dipom.getX() + dx);
 		int newY = col(dipom.getY() + dy);
 		if (isFree(newX, newY) && isFree(newX, newY + 1)) {
@@ -104,11 +92,11 @@ public abstract class GameGrid extends JPanel implements GridEventListener {
 		return false;
 	}
 	
-	private int row(int x) {
+	protected int row(int x) {
 		return (int) Math.ceil(x / (float)tileWidth);
 	}
 	
-	private int col(int y) {
+	protected int col(int y) {
 		return (int) Math.ceil(y / (float)tileHeight);
 	}
 	
@@ -119,45 +107,9 @@ public abstract class GameGrid extends JPanel implements GridEventListener {
 			return (!blocked[i][j]) && (getPomAt(i, j).isNull());
 	}
 	
-	private void dipomPlaced() {
-		Pom topPom = dipom.getTopPom();
-		Pom bottomPom = dipom.getBottomPom();
-		int row = row(dipom.getX());
-		int col = col(dipom.getY());
-		setPomAt(row, col, topPom);
-		setPomAt(row, col + 1, bottomPom);
-		
-		burstChainedPoms();
-		//commands.add(new BurstChainedPoms());
-	}
-
-	public void burstChainedPoms() {
-		chainPoms();
-		boolean hasPomToBurst = false;
-		for (int i = 0; i < rows; i++)
-			for (int j = 0; j < cols; j++)
-				if (getPomAt(i, j).isBursting()) {
-					setPomAt(i, j, Pom.NULL_POM);
-					hasPomToBurst = true;
-				}
-		if (hasPomToBurst) {
-			performingAction = true;
-			AudioHandler.playBurstEffect();
-			currentCP += burstScore;
-			if (currentCP > MAX_CP)
-				currentCP = MAX_CP;
-			observer.scoreChanged();
-			burstScore = 0;
-			dropDownAllPoms();
-			performingAction = false;
-			commands.add(new BurstChainedPoms()); // there may be new chains
-		} else { // no more chains
-			performingAction = false;
-			createDipom();
-		}
-	}
+	protected abstract void dipomPlaced();
 	
-	private void chainPoms() {
+	public void chainPoms() {
 		Set<PomChain> chains = new HashSet<PomChain>();
 		chains.clear();
 		for (int i = 1; i < rows - 1; i++)
@@ -167,38 +119,100 @@ public abstract class GameGrid extends JPanel implements GridEventListener {
 					chains.add(chain);
 			}
 		if (!chains.isEmpty()) {
+			int burstScore = 0;
 			for (PomChain chain: chains) {
 				for (Point p: chain.getChainedCoords()) {
 					//System.out.println(p.x + "," + p.y + "=" + pomGrid[p.x][p.y].toString());
-					getPomAt(p.x, p.y).burst();
+					getPomAt(p.x, p.y).burstingState();
 				}
 				burstScore += chain.getScore();
+			}
+			AudioHandler.playBurstEffect();
+			currentCP += burstScore;
+			if (currentCP > MAX_CP)
+				currentCP = MAX_CP;
+			for (GridObserver observer: observers)
+				observer.scoreChanged();
+			burstScore = 0;
+			fadeChainedPoms();
+		} else { // no more chains
+			state = State.DIPOM_FALLING;
+			createDipom();
+		}
+	}
+
+	private void fadeChainedPoms() {
+		state = State.BURSTING_POMS;
+		boolean fadedAPom = false;
+		for (int i = 1; i < rows - 1; i++)
+			for (int j = 0; j < cols - 1; j++) {
+				Pom pom = getPomAt(i, j);
+				if (pom.isBursting()) {
+					if (pom.tryToFade())
+						fadedAPom = true;
+					else {
+						setPomAt(i, j, Pom.NULL_POM);
+					}
+				}
+			}
+		if (!fadedAPom) {
+			markPomsForDropping();
+			dropDownAllPoms();
+		}
+	}
+	
+	private void markPomsForDropping() {
+		for (int i = 1; i < rows - 1 ; i++) {
+			int nullSpaces = 0;
+			for (int j = cols - 2; j > 0; j--) {
+				if (getPomAt(i, j).isNull())
+					nullSpaces++;
+				else if (nullSpaces > 0) {
+					for (int k = j; k > 0; k--)
+						getPomAt(i, k).increaseDropBy(nullSpaces * Pom.HEIGHT);
+					nullSpaces = 0;
+				}
 			}
 		}
 	}
 	
 	private void dropDownAllPoms() {
+		state = State.DROPPING_POMS;
+		boolean movedAPom = false;
 		for (int i = rows - 2; i > 0 ; i--) {
-			int colPomCount = 0; 
-			for (int j = cols - 2; j > 1; j--)
-				if (!getPomAt(i, j).isNull())
-					colPomCount++;
-			
-			for (int j = cols - 2; j > 1; j--) {
-				if (colPomCount == 0)
-					break;
-				while (getPomAt(i, j).isNull()) {
-					for (int k = j; k > 1; k--) {
-						setPomAt(i, k, getPomAt(i, k - 1));
+			for (int j = cols - 3; j > 1; j--) {
+				Pom pom = getPomAt(i, j); 
+				if (pom.isDropping()) {
+					if (debugMode)
+						System.out.println(String.format("drop[%d][%d]=%.2f", i, j, pom.getDroppingDistance()));
+					if (pom.tryToDropBy(Pom.HEIGHT / 5.0f))
+						movedAPom = true;
+					else {
+						pom.normalState();
+						int row = row(pom.getX());
+						int col = col(pom.getY());
+						int colBeforeDrop = col(pom.getYBeforeDrop());
+						setPomAt(row, col, pom);
+						setPomAt(row, colBeforeDrop, Pom.NULL_POM);
 					}
 				}
-				colPomCount--;
 			}
 		}
+		if (!movedAPom) // finished moving
+			chainPoms();
 	}
 	
 	public void swapDipom() {
 		dipom.swap();
+	}
+	
+	public void gameOver() {
+		for (GridObserver observer: observers)
+			observer.gameOver();
+	}
+	
+	protected boolean isGameOver() {
+		return (!isFree(row(dipom.getX()), col(dipom.getY()) + 1));
 	}
 
 	public Integer getScore() {
@@ -209,15 +223,21 @@ public abstract class GameGrid extends JPanel implements GridEventListener {
 		return pomGrid[row][col];
 	}
 
-	public void setPomAt(int row, int col, Pom pom) {
-		pomGrid[row][col] = pom;
-		pom.setX(row * tileWidth);
-		pom.setY(col * tileHeight);
-		repaint();
+	public void setPomAt(int row, int col, Pom pom) { 
+		if (row < 0 || row >= rows || col < 0 || col >= cols)
+			System.err.println(String.format("pom[%d][%d]=%s", row, col, pom.getColor()));
+		else {
+			if (debugMode && !pomGrid[row][col].matchesColorOf(pom))
+				System.out.println(String.format("pom[%d][%d]=%s", row, col, pom.getColor()));
+			pomGrid[row][col] = pom;
+			pom.setX(row * tileWidth);
+			pom.setY(col * tileHeight);
+			repaint();
+		}
 	}
 	
-	public void setGameGridObserver(GameGridObserver observer) {
-		this.observer = observer;
+	public void addGridObserver(GridObserver observer) {
+		observers.add(observer);
 	}
 	
 	private void initBlocked() {
@@ -274,13 +294,14 @@ public abstract class GameGrid extends JPanel implements GridEventListener {
 				pomGrid[i][j] = Pom.NULL_POM;
 	}
 	
-	protected void printPoms(Pom[][] pomGrid) {
+	public void printPoms() {
+		for (int i = 0; i < rows; i++)
+			System.out.print(i + "\t");
+		System.out.println();
 		for (int j = 0; j < cols; j++) {
+			System.out.print(j + "\t");
 			for (int i = 0; i < rows; i++) {
-				if (blocked[i][j])
-					System.out.print("BLKD");
-				else
-					System.out.print(pomGrid[i][j].toString());
+				System.out.print(pomGrid[i][j].toString());
 				System.out.print("\t");
 			}
 			System.out.println();
@@ -294,5 +315,10 @@ public abstract class GameGrid extends JPanel implements GridEventListener {
 	
 	public int getNumCols() {
 		return cols;
+	}
+	
+	public void toggleDebug() {
+		debugMode = true;
+		printPoms();
 	}
 }

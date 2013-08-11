@@ -2,8 +2,12 @@ package game.pom;
 
 import game.utility.ImageFactory;
 
+import java.awt.Component;
+import java.awt.Graphics;
 import java.io.Serializable;
 import javax.swing.ImageIcon;
+
+import darrylbu.icon.AlphaImageIcon;
 
 public enum PomSprite implements Serializable {
 	BLUE("blue"),
@@ -18,23 +22,24 @@ public enum PomSprite implements Serializable {
 	PomSprite(String color) {
 		this.color = color;
 		normal = createNormalImage(color);
-		burst = createBurstImage(color, 0.9f);
+		burst = createBurstImage(color);
 	}
 	
 	private ImageIcon createNormalImage(String color) {
 		return ImageFactory.createImage("pom/" + color + "1.png");
 	}
 	
-	private ImageIcon createBurstImage(String color, float alpha) {
+	private ImageIcon createBurstImage(String color) {
 		return ImageFactory.createImage("pom/" + color + "2.png");
 	}
 	
-	public ImageIcon getNormalImage() {
-		return normal;
+	public void paintNormalIcon(Component c, Graphics g, int x, int y) {
+		normal.paintIcon(c, g, x, y);
 	}
 	
-	public ImageIcon getBurstImage() {
-		return burst;
+	public void paintBurstIcon(Component c, Graphics g, int x, int y, float alpha) {
+		AlphaImageIcon image = (AlphaImageIcon)burst; 
+		image.paintIcon(c, g, x, y, alpha);
 	}
 	
 	public void resetImage() {

@@ -14,7 +14,7 @@ public class GameWindow {
 	private static final int WINDOW_WIDTH = 580;
 	private static final int WINDOW_HEIGHT = 400;
 	private JFrame frame;
-	private JPanel menuPanel;
+	private JPanel menuPanel, helpPanel;
 	private JButton randomMatchButton;
 	
 	public GameWindow() {
@@ -24,7 +24,8 @@ public class GameWindow {
 		frame.setResizable(false);
 		
 		menuPanel = createMenuPanel();
-		showMenu();
+		helpPanel = new HelpPanel(this);
+		showMainMenu();
 		randomMatchButton.doClick();
 	}
 	
@@ -59,9 +60,10 @@ public class GameWindow {
 		panel.add(button);
 	}
 	
-	private void showMenu() {
+	public void showMainMenu() {
 		AudioHandler.playMenuTrack();
 		frame.setContentPane(menuPanel);
+		frame.setVisible(true);
 	} 
 	
 	private void startGame(Connection conn) {
@@ -69,7 +71,6 @@ public class GameWindow {
 		GamePanel gamePanel = new GamePanel(conn);
 		frame.setContentPane(gamePanel);
 		frame.pack();
-		// frame.setVisible(true);
 		gamePanel.start();
 	}
 	
@@ -86,6 +87,7 @@ public class GameWindow {
 		
 		@Override
 		public void actionPerformed(ActionEvent e) {
+			AudioHandler.playClickEffect();
 			try {
 				final Socket server = new Socket(Client.SERVER, Client.SERVER_PORT);
 				source.setText("Waiting for opponent...");
@@ -139,13 +141,17 @@ public class GameWindow {
 	private class HelpListener implements ActionListener {
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			// TODO Auto-generated method stub
+			AudioHandler.playClickEffect();
+			frame.setContentPane(helpPanel);
+			frame.setVisible(true);
+			// frame.pack();
 		}
 	}
 	
 	private class QuitListener implements ActionListener {
 		@Override
 		public void actionPerformed(ActionEvent e) {
+			AudioHandler.playClickEffect();
 			System.exit(0);
 		}
 	}

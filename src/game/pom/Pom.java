@@ -5,13 +5,16 @@ import java.awt.Graphics;
 import java.io.Serializable;
 
 public class Pom implements Serializable {
+	private enum State {NORMAL, BURSTING, DROPPING};
 	public static final int WIDTH = 24;
 	public static final int HEIGHT = 22;
 	public static final Pom NULL_POM = new NullPom();
 	
 	private PomSprite sprite;
-	private float x, y;
-	private boolean isBursting;
+	private float x, y, yBeforeDrop;
+	private State state;
+	private float droppingDistance;
+	private float alpha;
 	
 	Pom() {}
 	
@@ -19,6 +22,8 @@ public class Pom implements Serializable {
 		this.sprite = sprite;
 		this.x = x;
 		this.y = y;
+		state = State.NORMAL;
+		alpha = 1.0f;
 	}
 	
 	public void translate(int dx, int dy) {
@@ -42,6 +47,10 @@ public class Pom implements Serializable {
 		this.y = y;
 	}
 	
+	public int getYBeforeDrop() {
+		return (int)this.yBeforeDrop;
+	}
+	
 	public boolean matchesColorOf(Pom pom) {
 		return this.sprite.equals(pom.sprite);
 	}
@@ -50,8 +59,37 @@ public class Pom implements Serializable {
 		return this.sprite == PomSprite.SHINING;
 	}
 	
-	public void burst() {
-		isBursting = true;
+	public void normalState() {
+		state = State.NORMAL;
+	}
+	
+	public void burstingState() {
+		state = State.BURSTING;
+	}
+	
+	public void increaseDropBy(float dy) {
+		state = State.DROPPING;
+		yBeforeDrop = y;
+		droppingDistance += dy;
+	}
+	
+	public boolean tryToDropBy(float dy) {
+		if (droppingDistance < 1.0)
+			return false;
+		droppingDistance -= dy;
+		y += dy;
+		return true;
+	}
+	
+	public float getDroppingDistance() {
+		return droppingDistance;
+	}
+	
+	public boolean tryToFade() {
+		if (alpha < 0.2)
+			return false;
+		alpha -= 0.2;
+		return true;
 	}
 	
 	public boolean isNull() {
@@ -59,14 +97,22 @@ public class Pom implements Serializable {
 	}
 	
 	public boolean isBursting() {
-		return isBursting;
+		return state == State.BURSTING;
+	}
+	
+	public boolean isDropping() {
+		return state == State.DROPPING;
+	}
+	
+	public boolean hasFaded() {
+		return alpha == 0.0;
 	}
 	
 	public void paintIcon(Component c, Graphics g) {
-		if (isBursting)
-			sprite.getBurstImage().paintIcon(c, g, getX(), getY());
+		if (isBursting())
+			sprite.paintBurstIcon(c, g, getX(), getY(), alpha);
 		else
-			sprite.getNormalImage().paintIcon(c, g, getX(), getY());
+			sprite.paintNormalIcon(c, g, getX(), getY());
 	}
 	
 	public String getColor() {

@@ -1,23 +1,19 @@
 package game;
 
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
 import game.grid.*;
 import game.utility.AvatarChoiceDialog;
 import game.utility.Dialog;
 
 import javax.swing.*;
 
-public class GamePanel extends JPanel implements GameGridObserver {
-	private Connection conn;
+public class GamePanel extends JPanel implements ActionListener, GridObserver {
 	private Timer gameLoopTimer;
 	private PlayArea playerArea;
 	private PlayArea opponentArea;
 	
 	public GamePanel(Connection conn) {
-		this.conn = conn;
-		setBackground(Color.BLACK);
 		setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
 
 		try {
@@ -25,15 +21,24 @@ public class GamePanel extends JPanel implements GameGridObserver {
 			conn.writeObject(playerAvatarIndex);
 			int opponentAvatarIndex = (Integer)conn.readObject();
 			
-			playerArea = new PlayArea(new PlayerGrid(conn, playerAvatarIndex), this, playerAvatarIndex);
+			GameGrid playerGrid = new PlayerGrid(conn, playerAvatarIndex);
+			playerGrid.addGridObserver(this);
+			playerArea = new PlayArea(playerGrid, playerAvatarIndex);
 			add(playerArea);
-			opponentArea = new PlayArea(new OpponentGrid(conn, opponentAvatarIndex), this, opponentAvatarIndex);
+			
+			GameGrid opponentGrid = new OpponentGrid(conn, opponentAvatarIndex);
+			opponentGrid.addGridObserver(this);
+			opponentArea = new PlayArea(opponentGrid, opponentAvatarIndex);
 			add(opponentArea);
 
 			gameLoopTimer = new Timer(70, new GameLoop());
+			gameLoopTimer.setRepeats(true);
 		} catch (Exception e) {
 			e.printStackTrace();
-		} 
+		}
+		JButton pauseButton = new JButton("pause");
+		pauseButton.addActionListener(this);
+		add(pauseButton);
 	}
 	
 	public void start() {
@@ -51,11 +56,18 @@ public class GamePanel extends JPanel implements GameGridObserver {
 		public void actionPerformed(ActionEvent e) {
 			playerArea.update();
 			opponentArea.update();
-			gameLoopTimer.start();
 		}
 	}
 
 	@Override
 	public void scoreChanged() {
+	}
+	
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		if (gameLoopTimer.isRunning())
+			gameLoopTimer.stop();
+		else
+			gameLoopTimer.start();
 	}
 }
