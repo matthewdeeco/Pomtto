@@ -8,7 +8,10 @@ class NullPom extends Pom {
 
 	@Override
 	public boolean matchesColorOf(Pom pom) {
-		return true;
+		if (pom.isNull())
+			return true;
+		else
+			return false;
 	}
 	
 	@Override
@@ -37,7 +40,7 @@ class NullPom extends Pom {
 	}
 	
 	@Override
-	public void paintIcon(Component c, Graphics g) {
+	public void paint(Component c, Graphics g) {
 	}
 	
 	@Override

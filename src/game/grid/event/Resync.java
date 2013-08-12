@@ -1,19 +1,20 @@
 package game.grid.event;
 
-import game.pom.Pom;
-import game.pom.PomFactory;
+import game.pom.*;
 
-public class UpdatePomGrid extends GridEvent {
+public class Resync extends GridEvent {
 	private String[][] pomColors;
 	private int rows, cols;
+	private int score;
 	
-	public UpdatePomGrid(Pom[][] pomGrid) {
-		rows = pomGrid.length;
-		cols = pomGrid[0].length;
+	public Resync(PomGrid pomGrid, int score) {
+		this.score = score;
+		rows = pomGrid.getNumRows();
+		cols = pomGrid.getNumCols();
 		pomColors = new String[rows][cols];
 		for (int i = 0; i < rows; i++)
 			for (int j = 0; j < cols; j++)
-				pomColors[i][j] = pomGrid[i][j].toString();
+				pomColors[i][j] = pomGrid.get(i, j).getColor();
 	}
 
 	@Override
@@ -21,9 +22,10 @@ public class UpdatePomGrid extends GridEvent {
 		for (int i = 0; i < rows; i++)
 			for (int j = 0; j < cols; j++) {
 				String color = pomColors[i][j];
-				Pom pom = PomFactory.createPom(color, 0, 0);
+				Pom pom = PomFactory.createPom(color);
 				listener.setPomAt(i, j, pom);
 			}
+		listener.setCP(score);
 	}
 	
 	@Override

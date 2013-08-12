@@ -40,8 +40,8 @@ public class PlayArea extends JPanel implements GridObserver, ActionListener {
 	}
 
 	@Override
-	public void scoreChanged() {
-		currentCp.setText(grid.getScore().toString());
+	public void scoreChanged(int score) {
+		currentCp.setText(String.valueOf(score));
 	}
 	
 	public void update() {

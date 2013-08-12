@@ -1,0 +1,26 @@
+上から降ってくるポムを操作して、下からせり上がるポムと組み合わせパズルゲームです
+A puzzle game where you control the poms falling from the top, as the poms gradually rise up from below.
+ポムの種類は四二路＋シャイニングポム敬語類が登場します。
+There are 4 pom colors, and a special "Shining" pom.
+上から降ってくるポムはまるボタン化xボタンで上下を反転できます
+Press Up to exhange the position.
+一定期間ごとにポムが下からせり上がります
+As time passes, poms below rise up.
+シャイニングポム以外のポムは３つくっつけると消えます
+Chaining 3 poms of the same color (excluding Shining poms) makes them vanish.
+その際、一匹につき１CP溜まります
+In this case, the score is 3 CP(Combo Points) per pom in the chain.
+消すタイミングによってはボーナスCPが追加されます
+Time your combos to get bonus CP.
+シャイニングポムは隣接したポム（何色でも良い）が消えると、つられて同時に消えます
+If the chain is adjacent to a Shining pom, it will be linked at the same time.
+その際、一匹につき１００CP溜まります
+In this case, the score is 100 CP per pom in the chain.
+CPが１００以上溜まると△ボタンでSクラフトを放てます
+If you build up more than 100 CP, you can release 1 of 2 special powers.
+Press Q to Defend, reducing the number of poms on your field.
+Press W to Attack, increasing the number of poms on your opponent's field.
+CPが高いほどSクラフトの効果が高くなります
+The more CP built up, the stronger the power will be.
+中のラインのポムが頂上まで積み上がるとゲームオーバーです
+When a pom reaches the top of the middle line, the game is finished.

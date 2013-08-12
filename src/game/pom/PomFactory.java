@@ -8,15 +8,15 @@ public class PomFactory {
 	private static final Random RANDOM = new Random();
 	private static final int SHINING_POM_CHANCE = 2; // percentage
 	
-	public static Pom createRandomPom(float x, float y) {
-		return new Pom(randomColor(), x, y);
+	public static Pom createRandomPom() {
+		return new Pom(randomColor());
 	}
 	
-	public static Pom createPom(String color, float x, float y) {
+	public static Pom createPom(String color) {
 		if (color.equals("NULL"))
 			return Pom.NULL_POM;
 		else
-			return new Pom(PomSprite.valueOf(color), x, y);
+			return new Pom(PomSprite.valueOf(color));
 	}
 	
 	private static PomSprite randomColor() {

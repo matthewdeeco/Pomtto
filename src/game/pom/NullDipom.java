@@ -4,10 +4,6 @@ import java.awt.Component;
 import java.awt.Graphics;
 
 public class NullDipom extends Dipom {
-
-	public NullDipom() {
-		super(0, 0);
-	}
 	
 	public void swap() {
 	}
@@ -24,7 +20,7 @@ public class NullDipom extends Dipom {
 	}
 	
 	@Override
-	public void paintIcon(Component c, Graphics g) {
+	public void paint(Component c, Graphics g) {
 	}
 	
 	@Override

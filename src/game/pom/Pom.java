@@ -18,10 +18,8 @@ public class Pom implements Serializable {
 	
 	Pom() {}
 	
-	public Pom(PomSprite sprite, float x, float y) {
+	public Pom(PomSprite sprite) {
 		this.sprite = sprite;
-		this.x = x;
-		this.y = y;
 		state = State.NORMAL;
 		alpha = 1.0f;
 	}
@@ -108,7 +106,7 @@ public class Pom implements Serializable {
 		return alpha == 0.0;
 	}
 	
-	public void paintIcon(Component c, Graphics g) {
+	public void paint(Component c, Graphics g) {
 		if (isBursting())
 			sprite.paintBurstIcon(c, g, getX(), getY(), alpha);
 		else

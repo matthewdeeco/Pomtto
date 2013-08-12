@@ -1,6 +1,6 @@
 package game;
 
-import org.newdawn.slick.*;
+import org.newdawn.slick.*;;
 
 public class AudioHandler {
 	private static Sound menuTrack;
@@ -8,6 +8,7 @@ public class AudioHandler {
 	private static Sound[] playTracks;
 	private static Sound burstEffect;
 	private static Sound clickEffect;
+	private static Sound comboEffects[];
 	
 	static {
 		try {
@@ -19,6 +20,9 @@ public class AudioHandler {
 			randomizeTrack();
 			burstEffect = new Sound("res/audio/Burst.wav");
 			clickEffect = new Sound("res/audio/Click.wav");
+			comboEffects = new Sound[4];
+			for (int i = 1; i <= comboEffects.length; i++)
+				comboEffects[i - 1] = new Sound("res/audio/combo/" + i + ".wav");
 		} catch (SlickException e) {
 			e.printStackTrace();
 		}
@@ -37,7 +41,7 @@ public class AudioHandler {
 	
 	public static void playMainGameTrack() {
 		if (!playTrack.playing()) {
-			playTrack.loop();
+			// playTrack.loop();
 			menuTrack.stop();
 		}
 	}
@@ -48,5 +52,9 @@ public class AudioHandler {
 	
 	public static void playClickEffect() {
 		clickEffect.play();
+	}
+	
+	public static void playComboEffect(int comboCount) {
+		comboEffects[comboCount].play();
 	}
 }

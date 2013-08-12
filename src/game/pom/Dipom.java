@@ -8,11 +8,11 @@ import java.io.Serializable;
 public class Dipom implements Serializable {
 	private Pom[] poms;
 	
-	public Dipom(int x, int y) {
+	public Dipom() {
 		poms = new Pom[2];
 		
-		poms[0] = PomFactory.createRandomPom(x, y);
-		poms[1] = PomFactory.createRandomPom(x, y + Pom.HEIGHT);
+		poms[0] = PomFactory.createRandomPom();
+		poms[1] = PomFactory.createRandomPom();
 	}
 	
 	/** Swaps the place of the two poms. */
@@ -46,12 +46,22 @@ public class Dipom implements Serializable {
 		return poms[0].getY();
 	}
 	
+	public void setX(int x) {
+		poms[0].setX(x);
+		poms[1].setX(x);
+	}
+	
+	public void setY(int y) {
+		poms[0].setY(y);
+		poms[1].setY(y + Pom.HEIGHT);
+	}
+	
 	public String toString() {
 		return poms[0].toString() + "," + poms[1].toString();
 	}
 	
-	public void paintIcon(Component c, Graphics g) {
-		poms[0].paintIcon(c, g);
-		poms[1].paintIcon(c, g);
+	public void paint(Component c, Graphics g) {
+		poms[0].paint(c, g);
+		poms[1].paint(c, g);
 	}
 }

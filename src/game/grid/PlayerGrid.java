@@ -11,9 +11,9 @@ import game.pom.*;
 import game.utility.Dialog;
 import game.utility.ImageFactory;
 
-public class PlayerGrid extends GameGrid implements KeyEventDispatcher, GridEventListener {
-	private Timer updatePomGridTimer = new Timer(2000, new UpdatePomGridListener());
-	private Timer acceptPressesTimer = new Timer(400, new AcceptPressesListener());
+public class PlayerGrid extends GameGrid implements KeyEventDispatcher {
+	private Timer updatePomGridTimer = new Timer(1000, new ResyncListener());
+	private Timer acceptPressesTimer = new Timer(300, new AcceptPressesListener());
 	private boolean acceptPresses = true;
 			
 	public PlayerGrid(Connection conn, int avatarIndex) {
@@ -22,6 +22,7 @@ public class PlayerGrid extends GameGrid implements KeyEventDispatcher, GridEven
 		populate();
         KeyboardFocusManager manager = KeyboardFocusManager.getCurrentKeyboardFocusManager();
         manager.addKeyEventDispatcher(this);
+        updatePomGridTimer.setRepeats(true);
         updatePomGridTimer.start();
         createDipom();
 	}
@@ -29,7 +30,7 @@ public class PlayerGrid extends GameGrid implements KeyEventDispatcher, GridEven
 	private void populate(){
 		for (int i = 1; i < rows - 1; i++)
 			for (int j = 10; j < cols - 1; j++)
-				setPomAt(i, j, PomFactory.createRandomPom(0, 0));
+				setPomAt(i, j, PomFactory.createRandomPom());
 	}
 	
 	@Override
@@ -39,12 +40,18 @@ public class PlayerGrid extends GameGrid implements KeyEventDispatcher, GridEven
 	}
 
 	@Override
-	public void createDipom() {
-		dipom = new Dipom((rows / 2) * tileWidth, 0);
+	protected void createDipom() {
+		dipom = new Dipom();
+		dipom.setX((rows / 2) * tileWidth);
+		dipom.setY(0);
 		GridEvent event = new DipomCreated(dipom); 
 		sendEvent(event);
 		if (isGameOver())
 			gameOver();
+	}
+
+	@Override
+	public void dipomCreated(Dipom dipom) {
 	}
 	
 	protected void dipomPlaced() {
@@ -56,6 +63,12 @@ public class PlayerGrid extends GameGrid implements KeyEventDispatcher, GridEven
 		setPomAt(row, col + 1, bottomPom);
 		
 		chainPoms();
+	}
+	
+	@Override
+	public void setPomAt(int row, int col, Pom pom) {
+		super.setPomAt(row, col, pom);
+		sendEvent(new SetPomAt(row, col, pom));
 	}
 	
 	private void sendEvent(GridEvent event) {
@@ -74,6 +87,10 @@ public class PlayerGrid extends GameGrid implements KeyEventDispatcher, GridEven
 		if (e.getID() == KeyEvent.KEY_RELEASED) {
 			if (e.getKeyCode() == KeyEvent.VK_DOWN)
 				event = new MoveDipom(0, 5);
+			else if (e.getKeyCode() == KeyEvent.VK_Q)
+				event = new Defend(currentCP);
+			else if (e.getKeyCode() == KeyEvent.VK_W)
+				event = new Attack();
 			else if (acceptPresses) {
 				if (e.getKeyCode() == KeyEvent.VK_LEFT)
 					event = new MoveDipom(-1, 0);
@@ -94,31 +111,18 @@ public class PlayerGrid extends GameGrid implements KeyEventDispatcher, GridEven
 		return false;
 	}
 	
-	class UpdatePomGridListener implements ActionListener {
+	class ResyncListener implements ActionListener {
 		@Override
 		public void actionPerformed(ActionEvent arg0) {
-			final GridEvent updateEvent = new UpdatePomGrid(pomGrid);
-			new Timer(2000, new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					sendEvent(updateEvent);
-				}
-			}).start();
-			
-			updatePomGridTimer.start();
+			sendEvent(new Resync(poms, currentCP));
 		}
 	}
 	
 	class AcceptPressesListener implements ActionListener {
-
 		@Override
 		public void actionPerformed(ActionEvent arg0) {
 			acceptPresses = true; 
 		}
-	}
-
-	@Override
-	public void dipomCreated(Dipom dipom) {
 	}
 
 }

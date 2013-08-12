@@ -11,28 +11,29 @@ import java.util.List;
 
 import javax.swing.*;
 
-public abstract class GameGrid extends JPanel {
+public abstract class GameGrid extends JPanel implements GridEventListener {
 	private enum State {DIPOM_FALLING, BURSTING_POMS, DROPPING_POMS};
+	private static final int MAX_CP = 999;
 	
 	protected final int rows = 9;
 	protected final int cols = 15;
 	protected final int tileWidth = 24;
 	protected final int tileHeight = 22;
-
-	private static final int MAX_CP = 999;
 	
 	protected Queue<GridEvent> commands;
 	
 	protected Connection conn;
 	protected Dipom dipom;
-	protected Pom[][] pomGrid;
+	protected PomGrid poms;
+	
 	protected ImageIcon bgImage, avatarImage;
+	protected int currentCP;
+	protected int comboCount;
+	protected int chainComboScore[] = {0, 10, 25, 50, 75};
 	
 	protected boolean debugMode;
 	
 	private State state;
-	private Integer currentCP;
-	private boolean[][] blocked;
 	private List<GridObserver> observers;
 	
 	public GameGrid(Connection conn, int avatarIndex) {
@@ -40,8 +41,7 @@ public abstract class GameGrid extends JPanel {
 		int width = rows * tileWidth;
 		int height = cols * tileHeight;
 		setPreferredSize(new Dimension(width, height));
-		initPomGrid();
-		initBlocked();
+		poms = new PomGrid(rows, cols);
 		commands = new LinkedList<GridEvent>();
 		currentCP = 0;
 		avatarImage = ImageFactory.createAvatarImage("map", avatarIndex);
@@ -55,10 +55,8 @@ public abstract class GameGrid extends JPanel {
 		super.paintComponent(g);
 		bgImage.paintIcon(this, g, 0, 0);
 		avatarImage.paintIcon(this, g, tileWidth, 2 * tileHeight);
-		for (int i = 0; i < rows; i++)
-			for (int j = 0; j < cols; j++)
-				getPomAt(i, j).paintIcon(this, g);
-		dipom.paintIcon(this, g);
+		poms.paintIcon(this, g);
+		dipom.paint(this, g);
 	}
 	
 	public void update() {
@@ -67,11 +65,9 @@ public abstract class GameGrid extends JPanel {
 		} else if (state == State.DROPPING_POMS) {
 			dropDownAllPoms();	
 		} else if (state == State.BURSTING_POMS) {
-			fadeChainedPoms();
+			fadeBurstingPoms();
 		}
 	}
-	
-	public abstract void createDipom();
 	
 	public void moveDipom(int dx, int dy) {
 		tryMove(dx * Pom.WIDTH, dy);
@@ -85,7 +81,7 @@ public abstract class GameGrid extends JPanel {
 	private boolean tryMove(int dx, int dy) {
 		int newX = row(dipom.getX() + dx);
 		int newY = col(dipom.getY() + dy);
-		if (isFree(newX, newY) && isFree(newX, newY + 1)) {
+		if (poms.isFree(newX, newY) && poms.isFree(newX, newY + 1)) {
 			dipom.translate(dx, dy);
 			return true;
 		}
@@ -100,48 +96,37 @@ public abstract class GameGrid extends JPanel {
 		return (int) Math.ceil(y / (float)tileHeight);
 	}
 	
-	private boolean isFree(int i, int j) {
-		if (i < 0 || i >= rows || j < 0 || j >= cols)
-			return false;
-		else
-			return (!blocked[i][j]) && (getPomAt(i, j).isNull());
-	}
-	
-	protected abstract void dipomPlaced();
-	
 	public void chainPoms() {
 		Set<PomChain> chains = new HashSet<PomChain>();
 		chains.clear();
 		for (int i = 1; i < rows - 1; i++)
 			for(int j = 0; j < cols - 1; j++) {
-				PomChain chain = new PomChain(this, i, j);
+				PomChain chain = new PomChain(poms, i, j);
 				if (!chain.isEmpty())
 					chains.add(chain);
 			}
 		if (!chains.isEmpty()) {
 			int burstScore = 0;
 			for (PomChain chain: chains) {
-				for (Point p: chain.getChainedCoords()) {
-					//System.out.println(p.x + "," + p.y + "=" + pomGrid[p.x][p.y].toString());
+				for (Point p: chain.getChainedCoords())
 					getPomAt(p.x, p.y).burstingState();
-				}
 				burstScore += chain.getScore();
 			}
 			AudioHandler.playBurstEffect();
-			currentCP += burstScore;
-			if (currentCP > MAX_CP)
-				currentCP = MAX_CP;
-			for (GridObserver observer: observers)
-				observer.scoreChanged();
-			burstScore = 0;
-			fadeChainedPoms();
+			setCP(currentCP + burstScore);
+			AudioHandler.playComboEffect(comboCount);
+			setCP(currentCP + chainComboScore[comboCount]);
+			if (comboCount < chainComboScore.length  - 1)
+				comboCount++;
+			fadeBurstingPoms();
 		} else { // no more chains
 			state = State.DIPOM_FALLING;
+			comboCount = 0;
 			createDipom();
 		}
 	}
 
-	private void fadeChainedPoms() {
+	protected void fadeBurstingPoms() {
 		state = State.BURSTING_POMS;
 		boolean fadedAPom = false;
 		for (int i = 1; i < rows - 1; i++)
@@ -150,9 +135,8 @@ public abstract class GameGrid extends JPanel {
 				if (pom.isBursting()) {
 					if (pom.tryToFade())
 						fadedAPom = true;
-					else {
+					else
 						setPomAt(i, j, Pom.NULL_POM);
-					}
 				}
 			}
 		if (!fadedAPom) {
@@ -201,6 +185,27 @@ public abstract class GameGrid extends JPanel {
 		if (!movedAPom) // finished moving
 			chainPoms();
 	}
+
+	@Override
+	public void receiveAttack(int strength) {
+	}
+
+	@Override
+	public void defend(int strength) {
+		if (strength > 0) {
+			for (int j = 0; j < strength; j++) {
+				for (int i = 1; i < rows - 1; i++) {
+					poms.get(i, cols - 2 - j).burstingState();
+				}
+			}
+			setCP(0);
+			AudioHandler.playBurstEffect();
+			fadeBurstingPoms();
+		}
+	}
+	
+	protected abstract void createDipom();
+	protected abstract void dipomPlaced();
 	
 	public void swapDipom() {
 		dipom.swap();
@@ -212,24 +217,23 @@ public abstract class GameGrid extends JPanel {
 	}
 	
 	protected boolean isGameOver() {
-		return (!isFree(row(dipom.getX()), col(dipom.getY()) + 1));
-	}
-
-	public Integer getScore() {
-		return currentCP;
+		int startX = dipom.getX();
+		int startY = dipom.getY();
+		return !poms.isFree(row(startX), col(startY) + 1);
 	}
 	
 	public Pom getPomAt(int row, int col) {
-		return pomGrid[row][col];
+		return poms.get(row, col);
 	}
 
 	public void setPomAt(int row, int col, Pom pom) { 
 		if (row < 0 || row >= rows || col < 0 || col >= cols)
 			System.err.println(String.format("pom[%d][%d]=%s", row, col, pom.getColor()));
 		else {
-			if (debugMode && !pomGrid[row][col].matchesColorOf(pom))
+			if (debugMode && !poms.get(row, col).matchesColorOf(pom) && pom.isNull()) {
 				System.out.println(String.format("pom[%d][%d]=%s", row, col, pom.getColor()));
-			pomGrid[row][col] = pom;
+			}
+			poms.set(row, col, pom);
 			pom.setX(row * tileWidth);
 			pom.setY(col * tileHeight);
 			repaint();
@@ -240,85 +244,16 @@ public abstract class GameGrid extends JPanel {
 		observers.add(observer);
 	}
 	
-	private void initBlocked() {
-		blocked = new boolean[rows][cols];
-		blocked[0][0] = true;
-		blocked[0][1] = true;
-		blocked[0][2] = true;
-		blocked[0][3] = true;
-		blocked[0][4] = true;
-		blocked[0][5] = true;
-		blocked[0][6] = true;
-		blocked[0][7] = true;
-		blocked[0][8] = true;
-		blocked[0][9] = true;
-		blocked[0][10] = true;
-		blocked[0][11] = true;
-		blocked[0][12] = true;
-		blocked[0][13] = true;
-		blocked[0][14] = true;
-		blocked[1][0] = true;
-		blocked[1][14] = true;
-		blocked[2][0] = true;
-		blocked[2][14] = true;
-		blocked[3][0] = true;
-		blocked[3][14] = true;
-		blocked[4][14] = true;
-		blocked[5][0] = true;
-		blocked[5][14] = true;
-		blocked[6][0] = true;
-		blocked[6][14] = true;
-		blocked[7][0] = true;
-		blocked[7][14] = true;
-		blocked[8][0] = true;
-		blocked[8][1] = true;
-		blocked[8][2] = true;
-		blocked[8][3] = true;
-		blocked[8][4] = true;
-		blocked[8][5] = true;
-		blocked[8][6] = true;
-		blocked[8][7] = true;
-		blocked[8][8] = true;
-		blocked[8][9] = true;
-		blocked[8][10] = true;
-		blocked[8][11] = true;
-		blocked[8][12] = true;
-		blocked[8][13] = true;
-		blocked[8][14] = true;
-	}
-	
-	private void initPomGrid() {
-		pomGrid = new Pom[rows][cols];
-		for (int i = 0; i < rows; i++)
-			for (int j = 0; j < cols; j++)
-				pomGrid[i][j] = Pom.NULL_POM;
-	}
-	
-	public void printPoms() {
-		for (int i = 0; i < rows; i++)
-			System.out.print(i + "\t");
-		System.out.println();
-		for (int j = 0; j < cols; j++) {
-			System.out.print(j + "\t");
-			for (int i = 0; i < rows; i++) {
-				System.out.print(pomGrid[i][j].toString());
-				System.out.print("\t");
-			}
-			System.out.println();
-		}
-		System.out.println();
-	}
-	
-	public int getNumRows() {
-		return rows;
-	}
-	
-	public int getNumCols() {
-		return cols;
+	public void setCP(int score) {
+		currentCP = score;
+		if (currentCP > MAX_CP)
+			currentCP = MAX_CP;
+		for (GridObserver observer: observers)
+			observer.scoreChanged(currentCP);
 	}
 	
 	public void toggleDebug() {
 		debugMode = true;
-		printPoms();
+		System.out.println(poms.toString());
 	}
 }

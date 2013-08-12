@@ -60,7 +60,7 @@ public class GamePanel extends JPanel implements ActionListener, GridObserver {
 	}
 
 	@Override
-	public void scoreChanged() {
+	public void scoreChanged(int score) {
 	}
 	
 	@Override

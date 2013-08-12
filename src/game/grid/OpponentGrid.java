@@ -5,12 +5,16 @@ import game.grid.event.*;
 import game.pom.Dipom;
 import game.utility.ImageFactory;
 
-public class OpponentGrid extends GameGrid implements GridEventListener {
+public class OpponentGrid extends GameGrid {
 
 	public OpponentGrid(Connection conn, int avatarIndex) {
 		super(conn, avatarIndex);
 		bgImage = ImageFactory.createImage("map/blue_map.png");
 		new Thread(new GridEventReceiver()).start();
+	}
+
+	@Override
+	protected void createDipom() {
 	}
 	
 	public void dipomCreated(Dipom dipom) {
@@ -18,8 +22,8 @@ public class OpponentGrid extends GameGrid implements GridEventListener {
 	}
 
 	@Override
-	protected void dipomPlaced(){
-		
+	protected void dipomPlaced() {
+		// chainPoms();
 	}
 	
 	private class GridEventReceiver implements Runnable {
@@ -30,9 +34,5 @@ public class OpponentGrid extends GameGrid implements GridEventListener {
 				event.invoke(OpponentGrid.this);
 			}
 		}
-	}
-
-	@Override
-	public void createDipom() {
 	}
 }
