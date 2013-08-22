@@ -1,5 +1,7 @@
 package game;
 
+import java.net.URL;
+
 import org.newdawn.slick.*;;
 
 public class AudioHandler {
@@ -12,20 +14,24 @@ public class AudioHandler {
 	
 	static {
 		try {
-			menuTrack = new Sound("res/audio/Shall We Fight.ogg");
+			menuTrack = new Sound(path("Shall We Fight.ogg"));
 			playTracks = new Sound[3];
-			playTracks[0] = new Sound("res/audio/Miss You.ogg");
-			playTracks[1] = new Sound("res/audio/A New Daily Life.ogg");
-			playTracks[2] = new Sound("res/audio/Fight! Cherry Blossom Viewing Dumpling Counterattack.ogg");
+			playTracks[0] = new Sound(path("Miss You.ogg"));
+			playTracks[1] = new Sound(path("A New Daily Life.ogg"));
+			playTracks[2] = new Sound(path("Fight! Cherry Blossom Viewing Dumpling Counterattack.ogg"));
 			randomizeTrack();
-			burstEffect = new Sound("res/audio/Burst.wav");
-			clickEffect = new Sound("res/audio/Click.wav");
+			burstEffect = new Sound(path("Burst.wav"));
+			clickEffect = new Sound(path("Click.wav"));
 			comboEffects = new Sound[4];
 			for (int i = 1; i <= comboEffects.length; i++)
-				comboEffects[i - 1] = new Sound("res/audio/combo/" + i + ".wav");
+				comboEffects[i - 1] = new Sound(path("combo/" + i + ".wav"));
 		} catch (SlickException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	private static String path(String path) {
+		return "res/audio/" + path;
 	}
 	
 	private static void randomizeTrack() {
@@ -55,6 +61,7 @@ public class AudioHandler {
 	}
 	
 	public static void playComboEffect(int comboCount) {
+		comboCount = Math.min(comboCount, comboEffects.length - 1);
 		comboEffects[comboCount].play();
 	}
 }

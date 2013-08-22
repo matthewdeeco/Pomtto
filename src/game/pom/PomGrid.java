@@ -3,13 +3,16 @@ package game.pom;
 import java.awt.Component;
 import java.awt.Graphics;
 
+import javax.crypto.spec.IvParameterSpec;
+
 public class PomGrid {
 	private Pom[][] grid;
-	private int rows, cols;
+	private int rows, visibleCols, cols;
 	private boolean[][] blocked;
 	
-	public PomGrid(int rows, int cols) {
+	public PomGrid(int rows, int visibleCols, int cols) {
 		this.rows = rows;
+		this.visibleCols = visibleCols;
 		this.cols = cols;
 		grid = new Pom[rows][cols];
 		initBlocked();
@@ -21,11 +24,12 @@ public class PomGrid {
 	public void paintIcon(Component c, Graphics g) {
 		for (int i = 0; i < rows; i++)
 			for (int j = 0; j < cols; j++)
-				grid[i][j].paint(c, g);
+				//if (!blocked[i][j])
+					grid[i][j].paint(c, g);
 	}
 	
 	public boolean isFree(int row, int col) {
-		if (row < 0 || row >= rows || col < 0 || col >= cols)
+		if (row < 0 || row >= rows || col < 0 || col >= visibleCols)
 			return false;
 		else
 			return (!blocked[row][col] && grid[row][col].isNull());
@@ -44,7 +48,7 @@ public class PomGrid {
 	}
 	
 	public int getNumCols() {
-		return cols;
+		return visibleCols;
 	}
 	
 	public String toString() {
@@ -52,7 +56,7 @@ public class PomGrid {
 		for (int i = 0; i < rows; i++)
 			sb.append(i).append("\t");
 		sb.append("\n");
-		for (int j = 0; j < cols; j++) {
+		for (int j = 0; j < visibleCols; j++) {
 			sb.append(j).append("\t");
 			for (int i = 0; i < rows; i++)
 				sb.append(grid[i][j].toString()).append("\t");
@@ -107,5 +111,8 @@ public class PomGrid {
 		blocked[8][12] = true;
 		blocked[8][13] = true;
 		blocked[8][14] = true;
+		for (int i = 0; i < rows; i++)
+			for (int j = visibleCols; j < cols; j++)
+				blocked[i][j] = true;
 	}
 }

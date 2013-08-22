@@ -20,7 +20,7 @@ class NullPom extends Pom {
 	}
 
 	@Override
-	public boolean tryToDropBy(float dy) {
+	public boolean tryToMoveBy(float dy) {
 		return false;
 	}
 	

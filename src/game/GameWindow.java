@@ -70,7 +70,7 @@ public class GameWindow {
 		AudioHandler.playMainGameTrack();
 		GamePanel gamePanel = new GamePanel(conn);
 		frame.setContentPane(gamePanel);
-		frame.pack();
+		frame.revalidate();
 		gamePanel.start();
 	}
 	

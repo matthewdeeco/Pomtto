@@ -21,8 +21,7 @@ public class Server {
 				randomSocket = s;
 			}
 			else {
-				new Matchup(randomSocket, s);
-				randomSocket = null;
+				matchup(randomSocket, s);
 			}
 		}
 	}
@@ -31,20 +30,24 @@ public class Server {
 		System.out.println(message);
 	}
 	
-	private class Matchup {
-		public Matchup(Socket s1, Socket s2) throws IOException {
-			String inetAdd1 = s1.getInetAddress().getHostAddress();
-			
-			try {
-				Connection conn1 = new Connection(s1);
-				conn1.writeObject("serve");
-				Connection conn2 = new Connection(s2);
-				conn2.writeObject("connect " + inetAdd1);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+	private void matchup(Socket s1, Socket s2) {
+		String inetAdd1 = s1.getInetAddress().getHostAddress();
+
+		try {
+			Connection conn1 = new Connection(s1);
+			conn1.writeObject("serve");
+		} catch (Exception e) {
+			randomSocket = s2;
+			return;
 		}
-		
+		try {
+			Connection conn2 = new Connection(s2);
+			conn2.writeObject("connect " + inetAdd1);
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			randomSocket = null;
+		}
 	}
 	
 	public static void main(String[] args) {

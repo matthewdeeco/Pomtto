@@ -40,7 +40,12 @@ public class Client {
 	}
 	
 	public static void main(String[] args) {
-		new Client();
-		new Client();
+		SwingUtilities.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				new Client();
+				new Client();
+			}
+		});
 	}
 }

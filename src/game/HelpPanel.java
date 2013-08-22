@@ -79,7 +79,6 @@ public class HelpPanel extends JPanel {
 	class NextListener implements ActionListener {
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			AudioHandler.playClickEffect();
 			textArea.setText(textArea.getText() + "\n\n" + sentences[nextSentence]);
 			if (++nextSentence >= sentences.length)
 				nextButton.setVisible(false);

@@ -2,6 +2,8 @@ package game.utility;
 
 import java.awt.Image;
 import java.io.*;
+import java.net.URL;
+
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 
@@ -18,6 +20,10 @@ public class ImageFactory {
 			e.printStackTrace();
 			return null;
 		}
+	}
+	
+	private static URL url(String path) {
+		return ImageFactory.class.getClassLoader().getResource("res/" + path);
 	}
 	
 	public static ImageIcon createAvatarImage(String type, int avatarIndex) {

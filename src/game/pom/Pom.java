@@ -11,9 +11,9 @@ public class Pom implements Serializable {
 	public static final Pom NULL_POM = new NullPom();
 	
 	private PomSprite sprite;
-	private float x, y, yBeforeDrop;
+	private float x, y, yBeforeMove;
 	private State state;
-	private float droppingDistance;
+	private float distanceToMove;
 	private float alpha;
 	
 	Pom() {}
@@ -45,8 +45,8 @@ public class Pom implements Serializable {
 		this.y = y;
 	}
 	
-	public int getYBeforeDrop() {
-		return (int)this.yBeforeDrop;
+	public int getYBeforeMove() {
+		return (int)this.yBeforeMove;
 	}
 	
 	public boolean matchesColorOf(Pom pom) {
@@ -65,22 +65,26 @@ public class Pom implements Serializable {
 		state = State.BURSTING;
 	}
 	
-	public void increaseDropBy(float dy) {
+	public void increaseMoveBy(float dy) {
 		state = State.DROPPING;
-		yBeforeDrop = y;
-		droppingDistance += dy;
+		yBeforeMove = y;
+		distanceToMove += dy;
 	}
 	
-	public boolean tryToDropBy(float dy) {
-		if (droppingDistance < 1.0)
+	public boolean tryToMoveBy(float dy) {
+		if (Math.abs(distanceToMove) < 1.0) {
+			distanceToMove = 0;
 			return false;
-		droppingDistance -= dy;
+		}
+		if (distanceToMove < 0)
+			dy *= -1;
+		distanceToMove -= dy;
 		y += dy;
 		return true;
 	}
 	
 	public float getDroppingDistance() {
-		return droppingDistance;
+		return distanceToMove;
 	}
 	
 	public boolean tryToFade() {

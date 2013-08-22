@@ -3,17 +3,22 @@ package game;
 import java.awt.*;
 import java.awt.event.*;
 import game.grid.*;
+import game.grid.event.*;
 import game.utility.AvatarChoiceDialog;
 import game.utility.Dialog;
 
 import javax.swing.*;
 
 public class GamePanel extends JPanel implements ActionListener, GridObserver {
+	private Connection conn;
 	private Timer gameLoopTimer;
 	private PlayArea playerArea;
 	private PlayArea opponentArea;
+	private GameGrid playerGrid;
+	private GameGrid opponentGrid;
 	
 	public GamePanel(Connection conn) {
+		this.conn = conn;
 		setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
 
 		try {
@@ -21,18 +26,19 @@ public class GamePanel extends JPanel implements ActionListener, GridObserver {
 			conn.writeObject(playerAvatarIndex);
 			int opponentAvatarIndex = (Integer)conn.readObject();
 			
-			GameGrid playerGrid = new PlayerGrid(conn, playerAvatarIndex);
+			playerGrid = new PlayerGrid(conn, playerAvatarIndex);
 			playerGrid.addGridObserver(this);
 			playerArea = new PlayArea(playerGrid, playerAvatarIndex);
 			add(playerArea);
 			
-			GameGrid opponentGrid = new OpponentGrid(conn, opponentAvatarIndex);
+			opponentGrid = new OpponentGrid(conn, opponentAvatarIndex);
 			opponentGrid.addGridObserver(this);
 			opponentArea = new PlayArea(opponentGrid, opponentAvatarIndex);
 			add(opponentArea);
 
 			gameLoopTimer = new Timer(70, new GameLoop());
 			gameLoopTimer.setRepeats(true);
+			new Thread(new GridEventReceiver()).start();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -69,5 +75,18 @@ public class GamePanel extends JPanel implements ActionListener, GridObserver {
 			gameLoopTimer.stop();
 		else
 			gameLoopTimer.start();
+	}
+	
+	private class GridEventReceiver implements Runnable {
+		@Override
+		public void run() {
+			GridEvent event;
+			while ((event = (GridEvent)conn.readObject()) != null) {
+				if (event instanceof Attack)
+					event.invoke(playerGrid);
+				else
+					event.invoke(opponentGrid);
+			}
+		}
 	}
 }
