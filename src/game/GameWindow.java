@@ -1,76 +1,42 @@
 package game;
 
-import game.utility.Dialog;
-import game.utility.ImageFactory;
-
-import java.awt.*;
+import game.audio.AudioHandler;
 import java.awt.event.*;
-import java.io.IOException;
 import java.net.*;
 import javax.swing.*;
 
-
 public class GameWindow {
-	private static final int WINDOW_WIDTH = 580;
+	private static final int WINDOW_WIDTH = 440;
 	private static final int WINDOW_HEIGHT = 400;
+	private Connection server;
 	private JFrame frame;
-	private JPanel menuPanel, helpPanel;
-	private JButton randomMatchButton;
+	private MenuPanel menuPanel;
 	
-	public GameWindow() {
-		frame = new JFrame("ポムっと");
+	public GameWindow(Connection server) {
+		this.server = server;
+		
+		frame = new JFrame("Pomtto");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setBounds(30, 30, WINDOW_WIDTH, WINDOW_HEIGHT);
 		frame.setResizable(false);
 		
-		menuPanel = createMenuPanel();
-		helpPanel = new HelpPanel(this);
+		menuPanel = new MenuPanel(this);
+		menuPanel.getRandomMatchButton().addActionListener(new RandomMatchListener(menuPanel.getRandomMatchButton()));
+
+		AudioHandler.playMenuTrack();
 		showMainMenu();
-		randomMatchButton.doClick();
-	}
-	
-	private JPanel createMenuPanel() {
-		JPanel menuPanel = new JPanel();
-		menuPanel.setLayout(new BorderLayout());
-		
-		JLabel titleLabel = new JLabel(ImageFactory.createImage("Sen.png"));
-		titleLabel.setBorder(BorderFactory.createEmptyBorder(20, 10, 20, 10));
-		
-		JPanel buttonPanel = new JPanel();
-		buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS));
-		
-		randomMatchButton = new JButton("Random Match");
-		randomMatchButton.addActionListener(new RandomMatchListener(randomMatchButton));
-		randomMatchButton.setAlignmentX(JComponent.CENTER_ALIGNMENT);
-		buttonPanel.add(randomMatchButton);
-		
-		addButtonToPanel(buttonPanel, "Help", new HelpListener());
-		addButtonToPanel(buttonPanel, "Quit", new QuitListener());
-		
-		menuPanel.add(titleLabel, BorderLayout.PAGE_START);
-		menuPanel.add(buttonPanel, BorderLayout.CENTER);
-		
-		return menuPanel;
-	}
-	
-	private void addButtonToPanel(JPanel panel, String text, ActionListener listener) {
-		JButton button  = new JButton(text);
-		button.addActionListener(listener);
-		button.setAlignmentX(JComponent.CENTER_ALIGNMENT);
-		panel.add(button);
+		// randomMatchButton.doClick();
 	}
 	
 	public void showMainMenu() {
-		AudioHandler.playMenuTrack();
 		frame.setContentPane(menuPanel);
 		frame.setVisible(true);
 	} 
 	
-	private void startGame(Connection conn) {
+	public void startGame(Connection conn) {
 		AudioHandler.playMainGameTrack();
 		GamePanel gamePanel = new GamePanel(conn);
-		frame.setContentPane(gamePanel);
-		frame.revalidate();
+		setContentPane(gamePanel);
 		gamePanel.start();
 	}
 	
@@ -78,6 +44,14 @@ public class GameWindow {
 		frame.setVisible(isVisible);
 	}
 	
+	public void setContentPane(JPanel contentPane) {
+		frame.setContentPane(contentPane);
+		((JComponent) frame.getContentPane()).revalidate();
+		frame.repaint();
+		frame.setVisible(true);
+	}
+	
+
 	private class RandomMatchListener implements ActionListener {
 		private JButton source;
 		
@@ -88,31 +62,26 @@ public class GameWindow {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			AudioHandler.playClickEffect();
-			try {
-				final Socket server = new Socket(Client.SERVER, Client.SERVER_PORT);
-				source.setText("Waiting for opponent...");
-				source.setEnabled(false);
-				new Thread(new Runnable() {
-					@Override
-					public void run() {
-						try {
-							Connection conn = findOpponent(server);
-							source.setText("Starting game...");
-							startGame(conn);
-						} catch (IOException e) {
-							connectionFailed();
-						}
+			source.setText("Waiting for opponent...");
+			source.setEnabled(false);
+			new Thread(new Runnable() {
+				@Override
+				public void run() {
+					try {
+						Connection conn = findOpponent();
+						source.setText("Starting game...");
+						startGame(conn);
+					} catch (Exception e) {
 					}
-				}).start();
-			} catch (IOException ex) {
-				connectionFailed();
-			}
+				}
+			}).start();
 		}
 		
-		private Connection findOpponent(Socket server) throws IOException {
-			Connection conn = new Connection(server);
-			String msg = (String)conn.readObject();
-			conn.close();
+		private Connection findOpponent() throws Exception {
+			server.writeObject("connect");
+			String msg = (String)server.readObject();
+			System.out.println(msg);
+			server.close();
 			
 			Socket s;
 			if (msg.equals("serve")) {
@@ -129,30 +98,6 @@ public class GameWindow {
 				s = new Socket(targetHost, Client.PORT);
 			}
 			return new Connection(s);
-		}
-		
-		private void connectionFailed() {
-			Dialog.errorMessage("Connection failed!");
-			source.setText("Retry Connection");
-			source.setEnabled(true);
-		}
-	}
-	
-	private class HelpListener implements ActionListener {
-		@Override
-		public void actionPerformed(ActionEvent e) {
-			AudioHandler.playClickEffect();
-			frame.setContentPane(helpPanel);
-			frame.setVisible(true);
-			// frame.pack();
-		}
-	}
-	
-	private class QuitListener implements ActionListener {
-		@Override
-		public void actionPerformed(ActionEvent e) {
-			AudioHandler.playClickEffect();
-			System.exit(0);
 		}
 	}
 }

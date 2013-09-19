@@ -1,6 +1,7 @@
 package game.grid;
 
 import game.*;
+import game.audio.AudioHandler;
 import game.grid.event.*;
 import game.pom.*;
 import game.utility.ImageFactory;
@@ -11,15 +12,16 @@ import java.util.List;
 
 import javax.swing.*;
 
+
 public abstract class GameGrid extends JPanel implements GridEventListener {
 	private enum State {DIPOM_FALLING, BURSTING_POMS, MOVING_POMS_UP, MOVING_POMS_DOWN};
 	private static final int MAX_CP = 999;
-	protected final int chainComboScore[] = {0, 10, 25, 50, 75};
+	protected final int chainComboScore[] = {0, 20, 40, 80, 160};
 	
 	protected final int rows = 9;
 	protected final int visibleCols = 15;
 	/** Some of these columns are not visible in the grid. */
-	protected final int cols = visibleCols + 9;
+	protected final int cols = visibleCols + 10;
 	protected final int tileWidth = 24;
 	protected final int tileHeight = 22;
 	
@@ -124,12 +126,16 @@ public abstract class GameGrid extends JPanel implements GridEventListener {
 			if (comboCount < chainComboScore.length  - 1)
 				comboCount++;
 			fadeBurstingPoms();
-		} else if (shouldAddMorePoms())
-			receiveAttack(1);
+		}
 		else { // no more chains
-			state = State.DIPOM_FALLING;
-			comboCount = 0;
-			createDipom();
+			int colsToAdd = colsToAdd();
+			if (colsToAdd > 0)
+				receiveAttack(colsToAdd);
+			else {
+				state = State.DIPOM_FALLING;
+				comboCount = 0;
+				createDipom();
+			}
 		}
 	}
 
@@ -171,12 +177,12 @@ public abstract class GameGrid extends JPanel implements GridEventListener {
 	
 	private void moveAllPoms() {
 		boolean movedAPom = false;
-		if (state == State.MOVING_POMS_UP) {
+		if (state == State.MOVING_POMS_UP) { // loop top-down
 			for (int i = rows - 2; i > 0 ; i--)
-				for (int j = 2; j < cols - 2; j++)
+				for (int j = 2; j < cols; j++)
 					if (movePom(i, j))
 						movedAPom = true;
-		} else {
+		} else { // loop bottom-up
 			for (int i = rows - 2; i > 0 ; i--)
 				for (int j = cols - 3; j > 1; j--)
 					if (movePom(i, j))
@@ -201,6 +207,8 @@ public abstract class GameGrid extends JPanel implements GridEventListener {
 				int col = col(pom.getY());
 				int colBeforeMove = col(pom.getYBeforeMove());
 				setPomAt(row, col, pom);
+				if (isGameOver())
+					gameOver();
 				setPomAt(row, colBeforeMove, Pom.NULL_POM);
 				return false;
 			}
@@ -248,7 +256,7 @@ public abstract class GameGrid extends JPanel implements GridEventListener {
 	
 	protected abstract void createDipom();
 	protected abstract void dipomPlaced();
-	protected abstract boolean shouldAddMorePoms();
+	protected abstract int colsToAdd();
 	
 	public void swapDipom() {
 		dipom.swap();
@@ -260,8 +268,8 @@ public abstract class GameGrid extends JPanel implements GridEventListener {
 	}
 	
 	protected boolean isGameOver() {
-		int startX = dipom.getX();
-		int startY = dipom.getY();
+		int startX = (rows / 2) * tileWidth;
+		int startY = 0;
 		return !poms.isFree(row(startX), col(startY) + 1);
 	}
 	

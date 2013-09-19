@@ -1,8 +1,11 @@
 package game;
 
+import game.audio.AudioHandler;
+
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
+
 
 public class HelpPanel extends JPanel {
 
@@ -37,9 +40,9 @@ public class HelpPanel extends JPanel {
 		sentences[1] = " There are 4 pom colors, and a special \"Shining\" pom.";
 		sentences[2] = " Press Up to exhange the position.";
 		sentences[3] = " As time passes, poms below rise up.";
-		sentences[4] = " Chaining 3 poms of the same color (excluding Shining poms) makes them vanish. In this case, the score is 1 CP (Combo Points) per pom in the chain. Time your combos to get bonus CP.";
+		sentences[4] = " Chaining 3 poms of the same color (excluding Shining poms) makes them vanish. In this case, the score is 5 CP (Combo Points) per pom in the chain. Time your combos to get bonus CP.";
 		sentences[5] = " If the chain is adjacent to a Shining pom, it will be linked at the same time. In this case, the score is 100 CP per pom in the chain.";
-		sentences[6] = " If you build up more than 100 CP, you can release 1 of 2 special powers.\n   Press Q to Defend, reducing the number of poms on your field.\n   Press W to Attack, increasing the number of poms on your opponent's field.";
+		sentences[6] = " If you build up more than 100 CP, you can release 1 of 2 special powers.\n   Press D to Defend, reducing the number of poms on your field.\n   Press A to Attack, increasing the number of poms on your opponent's field.";
 		sentences[7] = " The more CP built up, the stronger the power will be. When a pom reaches the top of the middle line, the game is finished.";
 		
 		textArea.setText(sentences[0]);

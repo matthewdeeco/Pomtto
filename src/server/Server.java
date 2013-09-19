@@ -5,56 +5,84 @@ import game.Connection;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 
 public class Server {
-	private static final int PORT = 8888;
-	private Socket randomSocket;
+	private static final int DEFAULT_PORT = 8888;
+	private Connection waiting;
 	private ServerSocket serverSocket;
-	
-	public Server() throws IOException {
-		serverSocket = new ServerSocket(PORT);
-		
-		print("Waiting for connections...");
-		while(true) {
-			Socket s = serverSocket.accept();
-			if (randomSocket == null) {
-				randomSocket = s;
-			}
-			else {
-				matchup(randomSocket, s);
+	private boolean isRunning;
+
+	public Server() {
+		new ServerWindow(this, DEFAULT_PORT);
+	}
+
+	public void openPort(int portNo) throws IOException {
+		serverSocket = new ServerSocket(portNo);
+		isRunning = true;
+		new Thread(new ServerThread()).start();
+	}
+
+	public void stop() {
+		try {
+			isRunning = false;
+			serverSocket.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private class ServerThread implements Runnable {
+		@Override
+		public void run() {
+			while (isRunning) {
+				try {
+					Socket socket = serverSocket.accept();
+					Connection conn = new Connection(socket);
+					ClientHandler handler = new ClientHandler(conn);
+					new Thread(handler).start();
+				} catch (SocketException e) {
+					// normal, server socket was closed
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
 			}
 		}
 	}
 	
-	private void print(String message) {
-		System.out.println(message);
+	private class ClientHandler implements Runnable {
+		Connection conn;
+		
+		ClientHandler(Connection conn) throws IOException {
+			this.conn = conn;
+		}
+		
+		@Override
+		public void run() {
+			String msg = (String)conn.readObject(); // wait for client's message
+			if (msg.equals("connect")) {
+				if (waiting == null)
+					waiting = conn;
+				else
+					matchup(waiting, conn);
+			}
+		}
+		
 	}
-	
-	private void matchup(Socket s1, Socket s2) {
-		String inetAdd1 = s1.getInetAddress().getHostAddress();
 
+	private void matchup(Connection conn1, Connection conn2) {
 		try {
-			Connection conn1 = new Connection(s1);
 			conn1.writeObject("serve");
 		} catch (Exception e) {
-			randomSocket = s2;
+			waiting = conn2;
 			return;
 		}
 		try {
-			Connection conn2 = new Connection(s2);
-			conn2.writeObject("connect " + inetAdd1);
+			conn2.writeObject("connect " + conn1.getHostAddress());
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
-			randomSocket = null;
-		}
-	}
-	
-	public static void main(String[] args) {
-		try {
-			new Server();
-		} catch (IOException e) {
-			e.printStackTrace();
+			waiting = null;
 		}
 	}
 }

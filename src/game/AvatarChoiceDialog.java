@@ -1,11 +1,13 @@
-package game.utility;
+package game;
 
-import game.AudioHandler;
+import game.audio.AudioHandler;
+import game.utility.ImageFactory;
 
 import java.util.ArrayList;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
+
 
 /** Dialog prompting the user to choose his/her avatar. */
 public class AvatarChoiceDialog extends JDialog implements ActionListener
@@ -20,13 +22,14 @@ public class AvatarChoiceDialog extends JDialog implements ActionListener
       setTitle("Choose your avatar");
       setModal(true);
       setResizable(false);
+      setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
 
       setLayout(new GridLayout(5, 7));
       addAvatarButtons();
       pack();
       setLocationRelativeTo(null);
 
-      // setVisible(true);
+      setVisible(true);
    }
 
    private void addAvatarButtons() {
@@ -55,8 +58,8 @@ public class AvatarChoiceDialog extends JDialog implements ActionListener
    }
 
    public int getSelectedAvatar() {
-	  return 1 + (int)(Math.random() * AVATAR_COUNT);
-      // return selectedAvatar;
+	  // return 1 + (int)(Math.random() * AVATAR_COUNT);
+      return selectedAvatar;
    }
 
    @Override

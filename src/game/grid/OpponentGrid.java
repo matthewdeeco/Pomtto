@@ -26,7 +26,7 @@ public class OpponentGrid extends GameGrid {
 	}
 
 	@Override
-	protected boolean shouldAddMorePoms() {
-		return false;
+	protected int colsToAdd() {
+		return 0;
 	}
 }

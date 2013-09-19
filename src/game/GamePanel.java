@@ -2,9 +2,10 @@ package game;
 
 import java.awt.*;
 import java.awt.event.*;
+
+import game.audio.AudioHandler;
 import game.grid.*;
 import game.grid.event.*;
-import game.utility.AvatarChoiceDialog;
 import game.utility.Dialog;
 
 import javax.swing.*;
@@ -42,9 +43,6 @@ public class GamePanel extends JPanel implements ActionListener, GridObserver {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		JButton pauseButton = new JButton("pause");
-		pauseButton.addActionListener(this);
-		add(pauseButton);
 	}
 	
 	public void start() {
@@ -52,9 +50,12 @@ public class GamePanel extends JPanel implements ActionListener, GridObserver {
 	}
 
 	public void gameOver() {
-		gameLoopTimer.stop();
-		Dialog.infoMessage("Game over!");
-		// System.exit(0);
+		if (gameLoopTimer.isRunning()) {
+			gameLoopTimer.stop();
+			Dialog.infoMessage("Game over!");
+			AudioHandler.toggleMute();
+			// System.exit(0);
+		}
 	}
 	
 	private class GameLoop implements ActionListener {

@@ -5,7 +5,7 @@ import java.util.*;
 
 public class PomChain {
 	private static final int MIN_CHAIN_LENGTH = 3;
-	private static final int NORMAL_POM_SCORE = 6;
+	private static final int NORMAL_POM_SCORE = 5;
 	private static final int SHINING_POM_SCORE = 100;
 
 	private Set<Point> chain; // coords of the poms in the chain
@@ -66,10 +66,10 @@ public class PomChain {
 		if (chain.size() - shiningPomCount < MIN_CHAIN_LENGTH) { // did not meet min to make a chain
 			chain.clear();
 			score = 0;
-		} else if (shiningPomCount > 0)
-			score = (chain.size() - shiningPomCount) * SHINING_POM_SCORE;
-		else
-			score = chain.size() * NORMAL_POM_SCORE;
+		} else {
+			int nonShiningPoms = chain.size() - shiningPomCount;
+			score = (nonShiningPoms * NORMAL_POM_SCORE) + (shiningPomCount * SHINING_POM_SCORE);
+		}
 	}
 	
 	public boolean isEmpty() {

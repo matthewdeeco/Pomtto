@@ -18,6 +18,10 @@ public class Connection {
 		in = new ObjectInputStream(is);
 	}
 	
+	public String getHostAddress() {
+		return s.getInetAddress().getHostAddress();
+	}
+	
 	public Object readObject() {
 		try {
 			return in.readObject();

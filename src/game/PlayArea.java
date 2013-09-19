@@ -32,7 +32,7 @@ public class PlayArea extends JPanel implements GridObserver, ActionListener {
 		
 		JButton debugButton = new JButton("debug");
 		debugButton.addActionListener(this);
-		infoPanel.add(debugButton);
+		// infoPanel.add(debugButton);
 	}
 
 	@Override

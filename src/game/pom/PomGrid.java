@@ -3,8 +3,6 @@ package game.pom;
 import java.awt.Component;
 import java.awt.Graphics;
 
-import javax.crypto.spec.IvParameterSpec;
-
 public class PomGrid {
 	private Pom[][] grid;
 	private int rows, visibleCols, cols;

@@ -1,5 +1,9 @@
 package game;
 
+import java.io.IOException;
+import java.net.Socket;
+
+import game.audio.AudioHandler;
 import game.utility.Dialog;
 
 import javax.swing.*;
@@ -12,9 +16,20 @@ public class Client {
 	private GameWindow window;
 	
 	public Client() {
+		AudioHandler.initialize();
 		tryToInitializeLookAndFeel();
-		window = new GameWindow();
-		window.setVisible(true);
+		
+		ServerPortDialog spd = new ServerPortDialog(SERVER, SERVER_PORT);
+		Socket server = spd.getSocket();
+		try {
+			Connection conn = new Connection(server);
+			if (conn != null) {
+				window = new GameWindow(conn);
+				window.setVisible(true);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	/** Try to initialize the look and feel. Exit if it failed. */
@@ -37,15 +52,5 @@ public class Client {
 		} catch (Exception ex) {
 			UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
 		}
-	}
-	
-	public static void main(String[] args) {
-		SwingUtilities.invokeLater(new Runnable() {
-			@Override
-			public void run() {
-				new Client();
-				new Client();
-			}
-		});
 	}
 }

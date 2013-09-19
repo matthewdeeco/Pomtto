@@ -21,7 +21,7 @@ public class PlayerGrid extends GameGrid implements KeyEventDispatcher {
 		super(conn, avatarIndex);
 		bgImage = ImageFactory.createImage("map/green_map.png");
 		borderImage = ImageFactory.createImage("map/green_border.png");
-		populate();
+		// populate();
         KeyboardFocusManager manager = KeyboardFocusManager.getCurrentKeyboardFocusManager();
         manager.addKeyEventDispatcher(this);
         updatePomGridTimer.setRepeats(true);
@@ -69,12 +69,13 @@ public class PlayerGrid extends GameGrid implements KeyEventDispatcher {
 	}
 	
 	@Override
-	protected boolean shouldAddMorePoms() {
-		if (dipomsPlaced % 3 == 0) { // add more poms every 3 dipoms placed
-			dipomsPlaced = 1;
-			return true;
-		} else
-			return false;
+	protected int colsToAdd() {
+		int colsToAdd = 0;
+		if (dipomsPlaced % 2 == 1) {
+			dipomsPlaced = 0;
+			colsToAdd = (int)(4 * Math.random());
+		}
+		return colsToAdd;
 	}
 	
 	@Override
